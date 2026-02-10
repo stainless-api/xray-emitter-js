@@ -1,0 +1,5 @@
+{
+  "editor.defaultFormatter": "oxc.oxfmt",
+  "editor.formatOnSave": true,
+  "prettier.enable": false
+}

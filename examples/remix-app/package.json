@@ -1,0 +1,16 @@
+{
+  "name": "@stainlessdev/xray-example-remix",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx entry.ts"
+  },
+  "dependencies": {
+    "@stainlessdev/xray-remix": "workspace:*",
+    "react-router": "^7.9.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}

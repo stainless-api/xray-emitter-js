@@ -1,0 +1,15 @@
+{
+  "name": "@stainlessdev/xray-example-edge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx worker.ts"
+  },
+  "dependencies": {
+    "@stainlessdev/xray-fetch": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}

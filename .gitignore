@@ -1,0 +1,9 @@
+.env
+.envrc
+node_modules/
+**/node_modules/
+**/dist/
+.turbo/
+**/.turbo/
+.pnpm-store/
+.DS_Store

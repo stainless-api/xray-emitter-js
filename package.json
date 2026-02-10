@@ -1,0 +1,28 @@
+{
+  "name": "xray-js",
+  "private": true,
+  "packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "format": "oxfmt --write packages examples",
+    "format:check": "oxfmt --check packages examples",
+    "clean": "turbo run clean",
+    "release": "node scripts/release.js",
+    "example:edge": "pnpm --filter ./examples/edge start",
+    "example:express": "pnpm --filter ./examples/express start",
+    "example:fastify": "pnpm --filter ./examples/fastify start",
+    "example:hono": "pnpm --filter ./examples/hono start",
+    "example:next": "pnpm --filter ./examples/next-app start",
+    "example:node-http": "pnpm --filter ./examples/node-http start",
+    "example:remix": "pnpm --filter ./examples/remix-app start"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.24.0",
+    "turbo": "^2.7.4",
+    "typescript": "^5.9.3"
+  }
+}
