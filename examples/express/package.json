@@ -6,8 +6,8 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "@stainlessdev/xray-emitter": "workspace:*"
+    "@stainlessdev/xray-emitter": "workspace:*",
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
