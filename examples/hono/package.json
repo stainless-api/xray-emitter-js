@@ -6,8 +6,8 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "@stainlessdev/xray-hono": "workspace:*",
-    "hono": "^4.11.3"
+    "hono": "^4.11.3",
+    "xray-js": "workspace:*"
   },
   "devDependencies": {
     "@hono/node-server": "^1.19.8",

@@ -1,17 +1,21 @@
 /// <reference types="node" />
 
 import { Hono } from 'hono';
+import { routePath } from 'hono/route';
 import { serve } from '@hono/node-server';
-import { createEmitter, type HonoXrayEnv } from '@stainlessdev/xray-hono';
+import { createEmitter, type HonoXrayEnv } from 'xray-js/hono';
 
 const app = new Hono<HonoXrayEnv>();
 
-const xray = createEmitter({
-  serviceName: 'xray-example',
-  endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
-  // Read from response headers when finalized (default: Request-Id).
-  requestId: { header: 'request-id' },
-});
+const xray = createEmitter(
+  {
+    serviceName: 'xray-example',
+    endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
+    // Read from response headers when finalized (default: Request-Id).
+    requestId: { header: 'request-id' },
+  },
+  { routePath },
+);
 
 app.use('*', xray);
 app.use('*', async (c, next) => {

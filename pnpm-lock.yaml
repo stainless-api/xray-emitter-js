@@ -7,10 +7,53 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@stainlessdev/xray-core':
+        specifier: workspace:*
+        version: link:packages/core
+      '@stainlessdev/xray-fetch':
+        specifier: workspace:*
+        version: link:packages/fetch
+      '@stainlessdev/xray-node':
+        specifier: workspace:*
+        version: link:packages/node
     devDependencies:
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.0
+      '@opentelemetry/core':
+        specifier: ^2.2.0
+        version: 2.4.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources':
+        specifier: ^2.2.0
+        version: 2.4.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^2.2.0
+        version: 2.4.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions':
+        specifier: ^1.29.0
+        version: 1.38.0
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.6
+      '@types/node':
+        specifier: ^20.19.29
+        version: 20.19.29
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      hono:
+        specifier: ^4.11.4
+        version: 4.11.4
       oxfmt:
         specifier: ^0.24.0
         version: 0.24.0
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(tsx@4.21.0)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
       turbo:
         specifier: ^2.7.4
         version: 2.7.4
@@ -33,15 +76,15 @@ importers:
 
   examples/express:
     dependencies:
-      '@stainlessdev/xray-express':
-        specifier: workspace:*
-        version: link:../../packages/express
       '@stainlessdev/xray-node':
         specifier: workspace:*
         version: link:../../packages/node
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      xray-js:
+        specifier: workspace:*
+        version: link:../..
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -71,12 +114,12 @@ importers:
 
   examples/hono:
     dependencies:
-      '@stainlessdev/xray-hono':
-        specifier: workspace:*
-        version: link:../../packages/hono
       hono:
         specifier: ^4.11.3
         version: 4.11.4
+      xray-js:
+        specifier: workspace:*
+        version: link:../..
     devDependencies:
       '@hono/node-server':
         specifier: ^1.19.8

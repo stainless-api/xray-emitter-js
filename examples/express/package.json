@@ -6,9 +6,9 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "@stainlessdev/xray-express": "workspace:*",
     "@stainlessdev/xray-node": "workspace:*",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "xray-js": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

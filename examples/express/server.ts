@@ -1,5 +1,5 @@
 import express from 'express';
-import { createEmitter } from '@stainlessdev/xray-express';
+import { createEmitter } from 'xray-js/express';
 import { getXrayContext } from '@stainlessdev/xray-node';
 
 const app = express();
