@@ -55,7 +55,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "test": "tsx --test 'src/**/*.test.ts'",
+    "test": "tsx --test src/**/*.test.ts",
     "typecheck": "tsc --noEmit",
     "format": "oxfmt --write examples src",
     "format:check": "oxfmt --check examples src",
