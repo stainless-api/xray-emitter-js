@@ -15,7 +15,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { createEmitter } from '@stainlessdev/xray-emitter';
 
 const exporter = new OTLPTraceExporter({
-  url: 'http://localhost:4318/v1/traces',
+  url: process.env.STAINLESS_XRAY_ENDPOINT_URL,
 });
 
 const xray = createEmitter({ serviceName: 'my-service' }, exporter);
