@@ -1,22 +1,19 @@
-# @stainlessdev/xray-fetch
+# X-ray for Fetch
 
 Fetch API adapter for Stainless X-ray request logging. Use this in edge runtimes, web workers, or any environment with the Fetch API.
 
 ## Install
 
 ```sh
-pnpm add @stainlessdev/xray-fetch
+pnpm add @stainlessdev/xray-emitter
 ```
 
 ## Basic usage (Fetch handler)
 
 ```ts
-import { createEmitter, wrapFetch } from '@stainlessdev/xray-fetch';
+import { createEmitter, wrapFetch } from '@stainlessdev/xray-emitter/fetch';
 
-const xray = createEmitter({
-  serviceName: 'my-service',
-  endpointUrl: 'http://localhost:4318',
-});
+const xray = createEmitter({ serviceName: 'my-service' });
 
 const handler = wrapFetch(async (_req) => {
   return new Response('ok', { status: 200 });
@@ -28,7 +25,7 @@ const handler = wrapFetch(async (_req) => {
 If you need to keep the original `Request`/`Response` objects (for framework compatibility), use `wrapFetchPreserve`:
 
 ```ts
-import { wrapFetchPreserve } from '@stainlessdev/xray-fetch';
+import { wrapFetchPreserve } from '@stainlessdev/xray-emitter/fetch';
 
 const handler = wrapFetchPreserve(async (req) => {
   return new Response(await req.text());
@@ -38,7 +35,7 @@ const handler = wrapFetchPreserve(async (req) => {
 ## Access the X-ray context
 
 ```ts
-import { getXrayContext } from '@stainlessdev/xray-fetch';
+import { getXrayContext } from '@stainlessdev/xray-emitter/fetch';
 
 const handler = wrapFetch(async (req) => {
   const ctx = getXrayContext(req);
@@ -53,7 +50,7 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Configuration
 
-`createEmitter(config)` accepts `XrayRuntimeConfig` from `@stainlessdev/xray-core`:
+`createEmitter(config)` accepts `XrayRuntimeConfig`:
 
 - `serviceName` (required)
 - `endpointUrl` (required; falls back to `STAINLESS_XRAY_ENDPOINT_URL` when omitted; explicit `endpointUrl` wins)
@@ -76,5 +73,5 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Notes
 
-- Requires a global `fetch` when using the default exporter. If `fetch` is not available, provide `exporter.instance` or use `@stainlessdev/xray-node`.
+- Requires a global `fetch` when using the default exporter. If `fetch` is not available, provide `exporter.instance` or use `@stainlessdev/xray-emitter/node`.
 - This package depends on OpenTelemetry packages as peer dependencies.

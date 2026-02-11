@@ -1,31 +1,30 @@
-# @stainlessdev/xray-remix
+# X-ray for Fastify
 
-Remix integration for Stainless X-ray request logging. Wraps Remix/React Router request handlers in fetch-based runtimes.
+Fastify integration for Stainless X-ray request logging. Registers hooks that wrap Fastify requests and responses.
 
 ## Install
 
 ```sh
-pnpm add @stainlessdev/xray-remix
+pnpm add @stainlessdev/xray-emitter
 ```
 
 ## Basic usage
 
 ```ts
-import type { RequestHandler } from 'react-router';
-import { createEmitter, getXrayContext } from '@stainlessdev/xray-remix';
+import Fastify from 'fastify';
+import { createEmitter } from '@stainlessdev/xray-emitter/fastify';
 
-const xray = createEmitter({
-  serviceName: 'my-service',
-  endpointUrl: 'http://localhost:4318',
+const app = Fastify();
+
+const xray = createEmitter({ serviceName: 'my-service' });
+
+xray(app);
+
+app.addHook('onRequest', async (request) => {
+  request.xray?.setUserId('user-123');
 });
 
-const handler: RequestHandler = async (request) => {
-  getXrayContext(request)?.setUserId('user-123');
-  const body = await request.text();
-  return new Response(`remix:${body}`, { status: 200 });
-};
-
-export default xray(handler);
+app.get('/', async () => ({ ok: true }));
 ```
 
 ## Request IDs and response headers
@@ -55,8 +54,9 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Advanced usage
 
-If you already have an `XrayEmitter` instance, use `wrapRemixRequestHandler(handler, xray, options)`.
+If you already have an `XrayEmitter` instance, use `addFastifyHooks(app, xray, options)`.
 
 ## Notes
 
 - This package depends on OpenTelemetry packages as peer dependencies.
+- Node.js >= 20 is required.

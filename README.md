@@ -1,17 +1,55 @@
-# xray-js
+# X-ray emitter
 
-Monorepo for Stainless X-ray request logging and OpenTelemetry instrumentation across Node.js and fetch-based runtimes.
+Node and Typescript SDKs to emit request logs to Stainless X-ray.
 
-## Packages
+## Getting started
 
-- `@stainlessdev/xray-core`
-- `@stainlessdev/xray-node`
-- `@stainlessdev/xray-fetch`
-- `@stainlessdev/xray-express`
-- `@stainlessdev/xray-fastify`
-- `@stainlessdev/xray-hono`
-- `@stainlessdev/xray-next`
-- `@stainlessdev/xray-remix`
+```sh
+npm add @stainlessdev/xray-emitter
+```
+
+Then using it in Express, for example:
+
+```ts
+import express from 'express';
+import { createEmitter } from '@stainlessdev/xray-emitter/express';
+import { getXrayContext } from '@stainlessdev/xray-emitter/node';
+
+const app = express();
+
+const xray = createEmitter({ serviceName: 'my-service' });
+
+app.use(xray);
+
+app.use((req, _res, next) => {
+  const ctx = getXrayContext(req);
+  ctx?.setUserId('user-123');
+  next();
+});
+
+app.get('/', (_req, res) => {
+  res.send('ok');
+});
+```
+
+
+## Supported frameworks
+
+| Framework | Import | Docs | Example |
+|-----------|--------|------|---------|
+| Express | `@stainlessdev/xray-emitter/express` | [README](src/express/README.md) | [example](examples/express) |
+| Fastify | `@stainlessdev/xray-emitter/fastify` | [README](src/fastify/README.md) | [example](examples/fastify) |
+| Hono | `@stainlessdev/xray-emitter/hono` | [README](src/hono/README.md) | [example](examples/hono) |
+| Next.js | `@stainlessdev/xray-emitter/next` | [README](src/next/README.md) | [example](examples/next-app) |
+| Remix | `@stainlessdev/xray-emitter/remix` | [README](src/remix/README.md) | [example](examples/remix-app) |
+
+Lower-level adapters:
+
+| Adapter | Import | Docs | Example |
+|---------|--------|------|---------|
+| Node.js (`node:http`) | `@stainlessdev/xray-emitter/node` | [README](src/node/README.md) | [example](examples/node-http) |
+| Fetch / Edge | `@stainlessdev/xray-emitter/fetch` | [README](src/fetch/README.md) | [example](examples/edge) |
+| Core | `@stainlessdev/xray-emitter` | [README](src/core/README.md) | — |
 
 ## Configuration
 
@@ -19,13 +57,8 @@ X-ray does not read standard OTEL environment variables. Configure an endpoint b
 `endpointUrl` or setting `STAINLESS_XRAY_ENDPOINT_URL`. If both are set, `endpointUrl` wins. An
 error is thrown if no endpoint is configured.
 
-Recommended entrypoints:
-
-- Node.js: `@stainlessdev/xray-node` (exports `createEmitter`)
-- Fetch/edge: `@stainlessdev/xray-fetch` (exports `createEmitter`)
-
-`@stainlessdev/xray-core` is runtime-agnostic; use it only if you supply a custom exporter instance
-to `createEmitter`.
+The core module (`@stainlessdev/xray-emitter`) is runtime-agnostic; use it only if you supply a
+custom exporter instance to `createEmitter`.
 
 ### Request IDs
 

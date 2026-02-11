@@ -68,11 +68,11 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Update versions
-        run: pnpm -r --filter './packages/*' exec npm version ${{ steps.meta.outputs.version }} --no-git-tag-version --allow-same-version
+      - name: Update version
+        run: npm version ${{ steps.meta.outputs.version }} --no-git-tag-version --allow-same-version
 
-      - name: Publish packages
-        run: pnpm -r --filter './packages/*' publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
+      - name: Publish
+        run: pnpm publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

@@ -1,29 +1,42 @@
-# @stainlessdev/xray-next
+# X-ray for Node.js
 
-Next.js integration for Stainless X-ray request logging. Wraps App Router route handlers (Next.js `Route Handlers`) in fetch-based runtimes.
+Node.js HTTP adapter for Stainless X-ray request logging. Use this for `node:http` servers or to power framework integrations (Express/Fastify).
 
 ## Install
 
 ```sh
-pnpm add @stainlessdev/xray-next
+pnpm add @stainlessdev/xray-emitter
 ```
 
-## Basic usage (App Router route handler)
+## Basic usage (node:http)
 
 ```ts
-import { createEmitter, getXrayContext } from '@stainlessdev/xray-next';
+import { createServer } from 'node:http';
+import { createEmitter, wrapHttpHandler } from '@stainlessdev/xray-emitter/node';
 
-const xray = createEmitter({
-  serviceName: 'my-service',
-  endpointUrl: 'http://localhost:4318',
-});
+const xray = createEmitter({ serviceName: 'my-service' });
 
-export const POST = xray(async (req, ctx) => {
-  const params = await ctx.params;
-  const body = await req.text();
-  getXrayContext(req)?.setUserId('user-123');
-  return new Response(`id:${params.id ?? ''}:${body}`, { status: 200 });
-});
+const server = createServer(
+  wrapHttpHandler((_req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('ok');
+  }, xray),
+);
+
+server.listen(3000);
+```
+
+## Access the X-ray context
+
+```ts
+import { getXrayContext } from '@stainlessdev/xray-emitter/node';
+
+const handler = wrapHttpHandler((req, res) => {
+  const ctx = getXrayContext(req);
+  ctx?.setUserId('user-123');
+  res.end('ok');
+}, xray);
 ```
 
 ## Request IDs and response headers
@@ -32,7 +45,7 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Configuration
 
-`createEmitter(config, options?)` accepts `XrayRuntimeConfig` (config) and `WrapOptions` (per-request defaults):
+`createEmitter(config)` accepts `XrayRuntimeConfig`:
 
 - `serviceName` (required)
 - `endpointUrl` (required; falls back to `STAINLESS_XRAY_ENDPOINT_URL` when omitted; explicit `endpointUrl` wins)
@@ -45,16 +58,15 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Adapter options (WrapOptions)
 
+`wrapHttpHandler(handler, xray, options)` and `createEmitter(config, options?)` share:
+
 - `route`: override the route name for the request
 - `requestId`: explicit request ID to use (prevents auto-generation)
 - `capture`: per-request capture overrides
 - `redaction`: per-request redaction overrides
 - `onRequest(ctx)`, `onResponse(ctx, log)`, `onError(ctx, err)` hooks
 
-## Advanced usage
-
-If you already have an `XrayEmitter` instance, use `wrapNextRoute(handler, xray, options)`.
-
 ## Notes
 
 - This package depends on OpenTelemetry packages as peer dependencies.
+- Node.js >= 20 is required.

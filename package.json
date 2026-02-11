@@ -54,16 +54,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "turbo run build && tsup",
-    "build:root": "tsup",
-    "test": "turbo run test && tsx --test src/**/*.test.ts",
-    "test:root": "tsx --test src/**/*.test.ts",
-    "typecheck": "turbo run typecheck && tsc --noEmit",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint -- --fix",
-    "format": "oxfmt --write packages examples src",
-    "format:check": "oxfmt --check packages examples src",
-    "clean": "turbo run clean && rm -rf dist",
+    "build": "tsup",
+    "test": "tsx --test 'src/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "format": "oxfmt --write examples src",
+    "format:check": "oxfmt --check examples src",
+    "clean": "rm -rf dist",
     "release": "node scripts/release.js",
     "example:edge": "pnpm --filter ./examples/edge start",
     "example:express": "pnpm --filter ./examples/express start",
@@ -92,7 +88,6 @@
     "react-router": "^7.9.3",
     "tsup": "^8.0.0",
     "tsx": "^4.19.0",
-    "turbo": "^2.7.4",
     "typescript": "^5.9.3"
   }
 }

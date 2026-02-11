@@ -1,41 +1,29 @@
-# @stainlessdev/xray-express
+# X-ray for Remix
 
-Express integration for Stainless X-ray request logging. Provides a middleware that wraps Express requests and responses.
+Remix integration for Stainless X-ray request logging. Wraps Remix/React Router request handlers in fetch-based runtimes.
 
 ## Install
 
 ```sh
-pnpm add @stainlessdev/xray-express
+pnpm add @stainlessdev/xray-emitter
 ```
 
 ## Basic usage
 
 ```ts
-import express from 'express';
-import { createEmitter } from '@stainlessdev/xray-express';
-import { getXrayContext } from '@stainlessdev/xray-node';
+import type { RequestHandler } from 'react-router';
+import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/remix';
 
-const app = express();
+const xray = createEmitter({ serviceName: 'my-service' });
 
-const xray = createEmitter({
-  serviceName: 'my-service',
-  endpointUrl: 'http://localhost:4318',
-});
+const handler: RequestHandler = async (request) => {
+  getXrayContext(request)?.setUserId('user-123');
+  const body = await request.text();
+  return new Response(`remix:${body}`, { status: 200 });
+};
 
-app.use(xray);
-
-app.use((req, _res, next) => {
-  const ctx = getXrayContext(req);
-  ctx?.setUserId('user-123');
-  next();
-});
-
-app.get('/', (_req, res) => {
-  res.send('ok');
-});
+export default xray(handler);
 ```
-
-The middleware also attaches the context to `req.xray` and `res.locals.xray` for convenience.
 
 ## Request IDs and response headers
 
@@ -64,9 +52,8 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Advanced usage
 
-If you already have an `XrayEmitter` instance, use `createExpressMiddleware(xray, options)` to create middleware.
+If you already have an `XrayEmitter` instance, use `wrapRemixRequestHandler(handler, xray, options)`.
 
 ## Notes
 
 - This package depends on OpenTelemetry packages as peer dependencies.
-- Node.js >= 20 is required.

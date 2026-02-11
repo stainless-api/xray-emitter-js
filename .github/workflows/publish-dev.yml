@@ -50,7 +50,7 @@ jobs:
         env:
           INPUT_NPM_TAG: ${{ inputs.npm_tag }}
         run: |
-          BASE_VERSION=$(node -p "require('./packages/core/package.json').version")
+          BASE_VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           BRANCH="${GITHUB_REF_NAME}"
           SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/@' '-' | tr -c 'a-z0-9-' '-' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
@@ -75,10 +75,10 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Update versions
-        run: pnpm -r --filter './packages/*' exec npm version ${{ steps.meta.outputs.version }} --no-git-tag-version
+      - name: Update version
+        run: npm version ${{ steps.meta.outputs.version }} --no-git-tag-version
 
-      - name: Publish packages
-        run: pnpm -r --filter './packages/*' publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
+      - name: Publish
+        run: pnpm publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

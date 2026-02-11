@@ -1,33 +1,26 @@
-# @stainlessdev/xray-fastify
+# X-ray for Next.js
 
-Fastify integration for Stainless X-ray request logging. Registers hooks that wrap Fastify requests and responses.
+Next.js integration for Stainless X-ray request logging. Wraps App Router route handlers (Next.js `Route Handlers`) in fetch-based runtimes.
 
 ## Install
 
 ```sh
-pnpm add @stainlessdev/xray-fastify
+pnpm add @stainlessdev/xray-emitter
 ```
 
-## Basic usage
+## Basic usage (App Router route handler)
 
 ```ts
-import Fastify from 'fastify';
-import { createEmitter } from '@stainlessdev/xray-fastify';
+import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/next';
 
-const app = Fastify();
+const xray = createEmitter({ serviceName: 'my-service' });
 
-const xray = createEmitter({
-  serviceName: 'my-service',
-  endpointUrl: 'http://localhost:4318',
+export const POST = xray(async (req, ctx) => {
+  const params = await ctx.params;
+  const body = await req.text();
+  getXrayContext(req)?.setUserId('user-123');
+  return new Response(`id:${params.id ?? ''}:${body}`, { status: 200 });
 });
-
-xray(app);
-
-app.addHook('onRequest', async (request) => {
-  request.xray?.setUserId('user-123');
-});
-
-app.get('/', async () => ({ ok: true }));
 ```
 
 ## Request IDs and response headers
@@ -57,9 +50,8 @@ X-ray will **auto-generate a request ID and inject it into your response headers
 
 ## Advanced usage
 
-If you already have an `XrayEmitter` instance, use `addFastifyHooks(app, xray, options)`.
+If you already have an `XrayEmitter` instance, use `wrapNextRoute(handler, xray, options)`.
 
 ## Notes
 
 - This package depends on OpenTelemetry packages as peer dependencies.
-- Node.js >= 20 is required.
