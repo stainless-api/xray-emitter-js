@@ -37,9 +37,7 @@ jobs:
         run: pnpm format:check
 
       - name: Build
-        if: ${{ always() }}
         run: pnpm build
 
       - name: Test
-        if: ${{ always() }}
         run: pnpm test
