@@ -1,4 +1,4 @@
-import { createEmitter, getXrayContext } from '@stainlessdev/xray-next';
+import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/next';
 import { isMain } from '../_fetch_server';
 
 export function createNextRoute(

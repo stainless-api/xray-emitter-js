@@ -6,7 +6,7 @@
     "start": "tsx worker.ts"
   },
   "dependencies": {
-    "@stainlessdev/xray-fetch": "workspace:*"
+    "@stainlessdev/xray-emitter": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

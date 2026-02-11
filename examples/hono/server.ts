@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import { routePath } from 'hono/route';
 import { serve } from '@hono/node-server';
-import { createEmitter, type HonoXrayEnv } from 'xray-js/hono';
+import { createEmitter, type HonoXrayEnv } from '@stainlessdev/xray-emitter/hono';
 
 const app = new Hono<HonoXrayEnv>();
 

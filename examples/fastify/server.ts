@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { createEmitter } from '@stainlessdev/xray-fastify';
+import { createEmitter } from '@stainlessdev/xray-emitter/fastify';
 
 const fastify = Fastify({ logger: true });
 

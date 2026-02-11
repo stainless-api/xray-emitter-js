@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'react-router';
-import { createEmitter, getXrayContext } from '@stainlessdev/xray-remix';
+import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/remix';
 import { isMain } from '../_fetch_server';
 
 export function createRemixHandler(

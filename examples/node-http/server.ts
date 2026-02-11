@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { createEmitter, wrapHttpHandler } from '@stainlessdev/xray-node';
+import { createEmitter, wrapHttpHandler } from '@stainlessdev/xray-emitter/node';
 
 const hostname = '127.0.0.1';
 const port = 3000;

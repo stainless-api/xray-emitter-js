@@ -1,14 +1,10 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type {
-  XrayEmitter,
-  XrayContext,
-  XrayRuntimeConfig,
-} from "@stainlessdev/xray-core";
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { XrayEmitter, XrayContext, XrayRuntimeConfig } from '../core/index';
 import {
   createEmitter as createNodeEmitter,
   wrapHttpHandler,
   type WrapOptions,
-} from "@stainlessdev/xray-node";
+} from '../node/node';
 
 export { createNodeEmitter as createCoreEmitter };
 export type {
@@ -19,32 +15,22 @@ export type {
   XrayContext,
   XrayEmitter,
   XrayRuntimeConfig,
-} from "@stainlessdev/xray-core";
-export type { WrapOptions } from "@stainlessdev/xray-node";
+} from '../core/index';
+export type { WrapOptions } from '../node/node';
 
 type NextFunction = (err?: unknown) => void;
 
 // copy types from Express to avoid a package dependency
-type ExpressMiddleware = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  next: NextFunction,
-) => void;
+type ExpressMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void;
 
 type ExpressEmitter = ExpressMiddleware & {
-  flush: XrayEmitter["flush"];
-  shutdown: XrayEmitter["shutdown"];
+  flush: XrayEmitter['flush'];
+  shutdown: XrayEmitter['shutdown'];
 };
 
-export function createEmitter(
-  config: XrayRuntimeConfig,
-  options?: WrapOptions,
-): ExpressEmitter {
+export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): ExpressEmitter {
   const emitter = createNodeEmitter(config);
-  const middleware = createExpressMiddleware(
-    emitter,
-    options,
-  ) as ExpressEmitter;
+  const middleware = createExpressMiddleware(emitter, options) as ExpressEmitter;
   middleware.flush = emitter.flush;
   middleware.shutdown = emitter.shutdown;
   return middleware;
@@ -64,11 +50,9 @@ export function createExpressMiddleware(
         ...options,
         onRequest: (ctx: XrayContext) => {
           (req as typeof req & { xray?: XrayContext }).xray = ctx;
-          (res as typeof res & { locals?: Record<string, unknown> }).locals ??=
-            {};
+          (res as typeof res & { locals?: Record<string, unknown> }).locals ??= {};
           (
-            (res as typeof res & { locals: Record<string, unknown> })
-              .locals as {
+            (res as typeof res & { locals: Record<string, unknown> }).locals as {
               xray?: XrayContext;
             }
           ).xray = ctx;
@@ -78,7 +62,7 @@ export function createExpressMiddleware(
     );
 
     const result = wrapped(req, res);
-    if (result && typeof (result as Promise<void>).catch === "function") {
+    if (result && typeof (result as Promise<void>).catch === 'function') {
       void (result as Promise<void>).catch(next);
     }
   };

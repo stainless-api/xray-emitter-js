@@ -1,15 +1,11 @@
-import type {
-  XrayEmitter,
-  XrayContext,
-  XrayRuntimeConfig,
-} from "@stainlessdev/xray-core";
-import { setContextRoute } from "@stainlessdev/xray-core/internal";
+import type { XrayEmitter, XrayContext, XrayRuntimeConfig } from '../core/index';
+import { setContextRoute } from '../core/internal';
 import {
   createEmitter as createFetchEmitter,
   getXrayContext,
   wrapFetchPreserve,
   type WrapOptions,
-} from "@stainlessdev/xray-fetch";
+} from '../fetch/fetch';
 
 export { createFetchEmitter as createCoreEmitter };
 export type {
@@ -20,8 +16,8 @@ export type {
   XrayContext,
   XrayEmitter,
   XrayRuntimeConfig,
-} from "@stainlessdev/xray-core";
-export type { WrapOptions } from "@stainlessdev/xray-fetch";
+} from '../core/index';
+export type { WrapOptions } from '../fetch/fetch';
 
 // copy types from Hono to avoid a package dependency
 interface HonoCompatibleContext {
@@ -40,18 +36,15 @@ export type HonoXrayEnv = {
 };
 
 type HonoEmitter = HonoMiddleware & {
-  flush: XrayEmitter["flush"];
-  shutdown: XrayEmitter["shutdown"];
+  flush: XrayEmitter['flush'];
+  shutdown: XrayEmitter['shutdown'];
 };
 
 export interface HonoWrapOptions extends WrapOptions {
   routePath?(ctx: HonoCompatibleContext, index?: number): string;
 }
 
-export function createEmitter(
-  config: XrayRuntimeConfig,
-  options?: HonoWrapOptions,
-): HonoEmitter {
+export function createEmitter(config: XrayRuntimeConfig, options?: HonoWrapOptions): HonoEmitter {
   const emitter = createFetchEmitter(config);
   const middleware = createHonoMiddleware(emitter, options) as HonoEmitter;
   middleware.flush = emitter.flush;
@@ -59,10 +52,7 @@ export function createEmitter(
   return middleware;
 }
 
-export function createHonoMiddleware(
-  xray: XrayEmitter,
-  options?: HonoWrapOptions,
-): HonoMiddleware {
+export function createHonoMiddleware(xray: XrayEmitter, options?: HonoWrapOptions): HonoMiddleware {
   const routePathFn = options?.routePath;
 
   return async (c, next) => {
@@ -76,7 +66,7 @@ export function createHonoMiddleware(
       async (req) => {
         const ctx = getXrayContext(req);
         if (ctx) {
-          c.set("xray", ctx);
+          c.set('xray', ctx);
         }
 
         let route = resolveRoutePath(routePathFn, c, -1);

@@ -1,4 +1,4 @@
-import { createEmitter, wrapFetch } from '@stainlessdev/xray-fetch';
+import { createEmitter, wrapFetch } from '@stainlessdev/xray-emitter/fetch';
 import { isMain } from '../_fetch_server';
 
 export function createEdgeHandler(

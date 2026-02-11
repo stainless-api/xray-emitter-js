@@ -6,7 +6,7 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "@stainlessdev/xray-node": "workspace:*"
+    "@stainlessdev/xray-emitter": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

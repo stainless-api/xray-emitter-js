@@ -6,7 +6,7 @@
     "start": "tsx route.ts"
   },
   "dependencies": {
-    "@stainlessdev/xray-next": "workspace:*"
+    "@stainlessdev/xray-emitter": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
