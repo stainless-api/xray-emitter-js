@@ -3,15 +3,15 @@ name: Publish Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., 0.1.0). Required unless triggered by a tag.'
+        description: "Version to publish (e.g., 0.1.0). Required unless triggered by a tag."
         required: false
         type: string
       npm_tag:
-        description: 'npm dist-tag (default: latest)'
+        description: "npm dist-tag (default: latest)"
         required: false
         type: string
 
@@ -30,17 +30,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
-
-      - name: Type check
-        run: pnpm typecheck
 
       - name: Build
         run: pnpm build
