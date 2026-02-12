@@ -124,11 +124,23 @@ function spawnAndWait(
 /**
  * Spawn a server, wait for it to be ready, make a request, send SIGTERM,
  * and wait for graceful shutdown.
+ *
+ * When `waitForFlush` is true the helper polls the stub receiver after the
+ * HTTP request completes and only sends SIGTERM once at least one trace has
+ * arrived (or a generous timeout is reached).  Without this, Node 24+ can
+ * exit before the OTLP export completes because the `fetch`/`undici`
+ * transport uses unref'd sockets that don't keep the event loop alive
+ * during the shutdown flush.
  */
 function spawnServer(
   file: string,
   env: Record<string, string>,
-  { port = 3000, timeoutMs = 15_000 } = {},
+  receiver: StubReceiver,
+  {
+    port = 3000,
+    timeoutMs = 15_000,
+    waitForFlush = false,
+  }: { port?: number; timeoutMs?: number; waitForFlush?: boolean } = {},
 ): Promise<{ stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = spawn(TSX, [file], {
@@ -160,12 +172,20 @@ function spawnServer(
       resolve({ stderr });
     });
 
-    // Wait for port → make a request → SIGTERM
+    // Wait for port → make a request → wait for traces → SIGTERM
     waitForPort(port)
       .then(() => httpGet(`http://127.0.0.1:${port}/`))
-      .then(() => {
-        // Small delay so the response span is finalized
-        setTimeout(() => child.kill('SIGTERM'), 200);
+      .then(async () => {
+        if (waitForFlush) {
+          const deadline = Date.now() + 10_000;
+          while (receiver.requestCount === 0 && Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 50));
+          }
+        } else {
+          // Small delay so the response span is finalized
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        child.kill('SIGTERM');
       })
       .catch((err) => {
         child.kill('SIGKILL');
@@ -203,22 +223,30 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
   // -- Server examples ------------------------------------------------------
 
   test('express', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'), env());
+    await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'), env(), receiver, {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
   test('fastify', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'fastify', 'server.ts'), env());
+    await spawnServer(path.join(ROOT, 'examples', 'fastify', 'server.ts'), env(), receiver, {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
   test('hono', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'hono', 'server.ts'), env());
+    await spawnServer(path.join(ROOT, 'examples', 'hono', 'server.ts'), env(), receiver, {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
   test('node-http', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'node-http', 'server.ts'), env());
+    await spawnServer(path.join(ROOT, 'examples', 'node-http', 'server.ts'), env(), receiver, {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 

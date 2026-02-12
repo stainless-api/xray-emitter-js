@@ -11,10 +11,16 @@ export function createEdgeHandler(
 }
 
 if (isMain(import.meta.url)) {
-  const handler = createEdgeHandler();
-  const request = new Request('https://example.com/hello', { method: 'GET' });
-  void handler(request).then(async (res) => {
-    const text = await res.text();
-    console.log(`response: ${res.status} ${text}`);
+  const xray = createEmitter({
+    serviceName: 'xray-example',
+    endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
   });
+  const handler = createEdgeHandler(xray);
+  const request = new Request('https://example.com/hello', { method: 'GET' });
+  void handler(request)
+    .then(async (res) => {
+      const text = await res.text();
+      console.log(`response: ${res.status} ${text}`);
+    })
+    .then(() => xray.shutdown());
 }

@@ -20,14 +20,20 @@ export function createNextRoute(
 }
 
 if (isMain(import.meta.url)) {
-  const handler = createNextRoute().POST;
+  const xray = createEmitter({
+    serviceName: 'xray-example',
+    endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
+  });
+  const handler = createNextRoute(xray).POST;
   const req = new Request('https://example.com/widgets/123', {
     method: 'POST',
     body: 'hello',
   });
   const ctx = { params: Promise.resolve({ id: '123' }) };
-  void handler(req, ctx).then(async (res) => {
-    const text = await res.text();
-    console.log(`response: ${res.status} ${text}`);
-  });
+  void handler(req, ctx)
+    .then(async (res) => {
+      const text = await res.text();
+      console.log(`response: ${res.status} ${text}`);
+    })
+    .then(() => xray.shutdown());
 }
