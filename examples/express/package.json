@@ -1,0 +1,16 @@
+{
+  "name": "@stainlessdev/xray-example-express",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "@stainlessdev/xray-emitter": "workspace:*",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}

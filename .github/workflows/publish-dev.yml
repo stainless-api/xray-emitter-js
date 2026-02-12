@@ -1,0 +1,81 @@
+name: Publish Dev
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: 'Override npm dist-tag (optional)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency: publish-dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Compute dev version and tag
+        id: meta
+        env:
+          INPUT_NPM_TAG: ${{ inputs.npm_tag }}
+        run: |
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          BRANCH="${GITHUB_REF_NAME}"
+          SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/@' '-' | tr -c 'a-z0-9-' '-' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+          if [ -z "$SAFE_BRANCH" ]; then
+            SAFE_BRANCH="branch"
+          fi
+
+          if [ "$BRANCH" = "main" ]; then
+            NPM_TAG="dev"
+            PREID="dev"
+          else
+            NPM_TAG="branch-${SAFE_BRANCH}"
+            PREID="branch.${SAFE_BRANCH}"
+          fi
+
+          if [ -n "$INPUT_NPM_TAG" ]; then
+            NPM_TAG="$INPUT_NPM_TAG"
+          fi
+
+          VERSION="${BASE_VERSION}-${PREID}.${SHORT_SHA}"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Update version
+        run: npm version ${{ steps.meta.outputs.version }} --no-git-tag-version
+
+      - name: Publish
+        run: pnpm publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
