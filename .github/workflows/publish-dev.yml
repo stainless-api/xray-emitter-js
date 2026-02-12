@@ -3,11 +3,11 @@ name: Publish Dev
 on:
   push:
     branches:
-      - "**"
+      - '**'
   workflow_dispatch:
     inputs:
       npm_tag:
-        description: "Override npm dist-tag (optional)"
+        description: 'Override npm dist-tag (optional)'
         required: false
         type: string
 
@@ -27,8 +27,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
