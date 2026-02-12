@@ -52,6 +52,11 @@
       "types": "./dist/remix.d.ts",
       "import": "./dist/remix.js",
       "require": "./dist/remix.cjs"
+    },
+    "./effect": {
+      "types": "./dist/effect.d.ts",
+      "import": "./dist/effect.js",
+      "require": "./dist/effect.cjs"
     }
   },
   "files": [
@@ -65,6 +70,9 @@
     "format:check": "oxfmt --check .github examples src",
     "clean": "rm -rf dist",
     "release": "node scripts/release.js",
+    "test:bun": "find src -name '*.test.ts' ! -path '*/test/*' ! -path '*/express/*' ! -path '*/node/*' -print0 | xargs -0 -n1 bun test",
+    "example:effect": "pnpm --filter ./examples/effect start",
+    "example:effect-bun": "pnpm --filter ./examples/effect start:bun",
     "example:edge": "pnpm --filter ./examples/edge start",
     "example:express": "pnpm --filter ./examples/express start",
     "example:fastify": "pnpm --filter ./examples/fastify start",
@@ -82,9 +90,11 @@
     "@opentelemetry/semantic-conventions": "^1.29.0"
   },
   "devDependencies": {
+    "@effect/platform": "^0.94.0",
     "@types/express": "^5.0.0",
     "@types/node": "^20.19.29",
     "esbuild": "^0.25.0",
+    "effect": "^3.19.0",
     "express": "^5.2.1",
     "fastify": "^5.6.2",
     "hono": "^4.11.4",

@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { describe, test, beforeEach, afterEach } from 'node:test';
+
+let hasBun = false;
+try {
+  execFileSync('bun', ['--version'], { stdio: 'ignore' });
+  hasBun = true;
+} catch {}
 
 // ---------------------------------------------------------------------------
 // Stub OTLP receiver — accepts POST /v1/traces, returns 200, counts requests
@@ -102,7 +108,10 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
   let receiver: StubReceiver;
 
   function childEnv(): Record<string, string> {
-    return { ...process.env, STAINLESS_XRAY_ENDPOINT_URL: receiver.url } as Record<string, string>;
+    return {
+      ...process.env,
+      STAINLESS_XRAY_ENDPOINT_URL: receiver.url,
+    } as Record<string, string>;
   }
 
   /** Spawn a child process and wait for it to exit. */
@@ -143,14 +152,15 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
    */
   function spawnServer(
     file: string,
-    { port = 3000, timeoutMs = 15_000, waitForFlush = false } = {} as {
+    { cmd, port = 3000, timeoutMs = 15_000, waitForFlush = false } = {} as {
+      cmd?: string;
       port?: number;
       timeoutMs?: number;
       waitForFlush?: boolean;
     },
   ): Promise<{ stderr: string }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(TSX, [file], {
+      const child = spawn(cmd ?? TSX, [file], {
         cwd: path.dirname(file),
         env: childEnv(),
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -211,18 +221,39 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
 
   // -- Server examples ------------------------------------------------------
 
+  test('effect', async () => {
+    await spawnServer(path.join(ROOT, 'examples', 'effect', 'server.ts'), {
+      waitForFlush: true,
+    });
+    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+  });
+
+  test('effect (bun)', { skip: !hasBun }, async () => {
+    await spawnServer(path.join(ROOT, 'examples', 'effect', 'server-bun.ts'), {
+      cmd: 'bun',
+      waitForFlush: true,
+    });
+    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+  });
+
   test('express', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'), { waitForFlush: true });
+    await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'), {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
   test('fastify', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'fastify', 'server.ts'), { waitForFlush: true });
+    await spawnServer(path.join(ROOT, 'examples', 'fastify', 'server.ts'), {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
   test('hono', async () => {
-    await spawnServer(path.join(ROOT, 'examples', 'hono', 'server.ts'), { waitForFlush: true });
+    await spawnServer(path.join(ROOT, 'examples', 'hono', 'server.ts'), {
+      waitForFlush: true,
+    });
     assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
   });
 
