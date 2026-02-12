@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { describe, test, beforeEach, afterEach } from 'node:test';
+
+let hasBun = false;
+try {
+  execFileSync('bun', ['--version'], { stdio: 'ignore' });
+  hasBun = true;
+} catch {}
 
 // ---------------------------------------------------------------------------
 // Stub OTLP receiver — accepts POST /v1/traces, returns 200, counts requests
@@ -137,13 +143,14 @@ function spawnServer(
   env: Record<string, string>,
   receiver: StubReceiver,
   {
+    cmd,
     port = 3000,
     timeoutMs = 15_000,
     waitForFlush = false,
-  }: { port?: number; timeoutMs?: number; waitForFlush?: boolean } = {},
+  }: { cmd?: string; port?: number; timeoutMs?: number; waitForFlush?: boolean } = {},
 ): Promise<{ stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(TSX, [file], {
+    const child = spawn(cmd ?? TSX, [file], {
       cwd: path.dirname(file),
       env: { ...process.env, ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -221,6 +228,21 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
   });
 
   // -- Server examples ------------------------------------------------------
+
+  test('effect', async () => {
+    await spawnServer(path.join(ROOT, 'examples', 'effect', 'server.ts'), env(), receiver, {
+      waitForFlush: true,
+    });
+    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+  });
+
+  test('effect (bun)', { skip: !hasBun }, async () => {
+    await spawnServer(path.join(ROOT, 'examples', 'effect', 'server-bun.ts'), env(), receiver, {
+      cmd: 'bun',
+      waitForFlush: true,
+    });
+    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+  });
 
   test('express', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'), env(), receiver, {

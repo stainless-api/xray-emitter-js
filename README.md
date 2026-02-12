@@ -42,6 +42,7 @@ app.get('/', (_req, res) => {
 | Hono | `@stainlessdev/xray-emitter/hono` | [README](src/hono/README.md) | [example](examples/hono) |
 | Next.js | `@stainlessdev/xray-emitter/next` | [README](src/next/README.md) | [example](examples/next-app) |
 | Remix | `@stainlessdev/xray-emitter/remix` | [README](src/remix/README.md) | [example](examples/remix-app) |
+| Effect | `@stainlessdev/xray-emitter/effect` | [README](src/effect/README.md) | [example](examples/effect) |
 
 Lower-level adapters:
 

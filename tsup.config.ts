@@ -11,6 +11,7 @@ export default defineConfig({
     fastify: 'src/fastify/fastify.ts',
     next: 'src/next/next.ts',
     remix: 'src/remix/remix.ts',
+    effect: 'src/effect/effect.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,
@@ -25,5 +26,7 @@ export default defineConfig({
     '@opentelemetry/sdk-trace-base',
     '@opentelemetry/semantic-conventions',
     /^node:/,
+    'effect',
+    /^@effect\//,
   ],
 });

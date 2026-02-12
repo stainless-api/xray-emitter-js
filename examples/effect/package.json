@@ -1,0 +1,21 @@
+{
+  "name": "@stainlessdev/xray-example-effect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx server.ts",
+    "start:bun": "bun server-bun.ts"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.94.0",
+    "@effect/platform-bun": "latest",
+    "@effect/platform-node": "latest",
+    "@stainlessdev/xray-emitter": "workspace:*",
+    "effect": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}
