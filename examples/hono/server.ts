@@ -28,9 +28,10 @@ app.get('/', (c) => {
 });
 
 const port = 3000;
-serve({ fetch: app.fetch, port });
+const server = serve({ fetch: app.fetch, port });
 
 const shutdown = async () => {
+  server.close();
   await xray.shutdown();
 };
 

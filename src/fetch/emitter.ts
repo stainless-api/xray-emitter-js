@@ -1,5 +1,7 @@
-// Force the browser/worker exporter to avoid Node http resolution in edge runtimes.
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto/build/src/platform/browser/index.js';
+// Use the bare package import so that Node.js resolves to the Node build (http
+// transport) while bundlers (webpack, vite, wrangler/esbuild) follow the
+// package.json "browser" field and resolve to the browser build automatically.
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import {
   createEmitter as createCoreEmitter,
   normalizeConfig,
@@ -7,15 +9,6 @@ import {
 } from '../core/index';
 
 export function createEmitter(config: XrayRuntimeConfig) {
-  if (!config.exporter?.instance) {
-    const hasFetch = typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function';
-    if (!hasFetch) {
-      throw new Error(
-        'fetch is required to use the default @stainlessdev/xray-fetch exporter; provide exporter.instance or use @stainlessdev/xray-node instead.',
-      );
-    }
-  }
-
   const resolved = normalizeConfig(config);
   const exporter =
     config.exporter?.instance ??

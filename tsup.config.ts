@@ -21,7 +21,6 @@ export default defineConfig({
     '@opentelemetry/api',
     '@opentelemetry/core',
     '@opentelemetry/exporter-trace-otlp-proto',
-    '@opentelemetry/exporter-trace-otlp-proto/build/src/platform/browser/index.js',
     '@opentelemetry/resources',
     '@opentelemetry/sdk-trace-base',
     '@opentelemetry/semantic-conventions',

@@ -15,45 +15,12 @@ function createNoopExporter(): SpanExporter {
   };
 }
 
-function withFetchDisabled(fn: () => void): void {
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch');
-  Object.defineProperty(globalThis, 'fetch', {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  try {
-    fn();
-  } finally {
-    if (descriptor) {
-      Object.defineProperty(globalThis, 'fetch', descriptor);
-    } else {
-      delete (globalThis as { fetch?: typeof fetch }).fetch;
-    }
-  }
-}
-
-test('createEmitter throws when fetch is missing without exporter override', () => {
-  withFetchDisabled(() => {
-    assert.throws(
-      () =>
-        createEmitter({
-          serviceName: 'test',
-          endpointUrl: 'https://collector',
-        }),
-      /fetch/i,
-    );
-  });
-});
-
-test('createEmitter allows custom exporter without fetch', () => {
-  withFetchDisabled(() => {
-    assert.doesNotThrow(() =>
-      createEmitter({
-        serviceName: 'test',
-        endpointUrl: 'https://collector',
-        exporter: { instance: createNoopExporter() },
-      }),
-    );
-  });
+test('createEmitter allows custom exporter override', () => {
+  assert.doesNotThrow(() =>
+    createEmitter({
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { instance: createNoopExporter() },
+    }),
+  );
 });

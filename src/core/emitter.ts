@@ -52,13 +52,33 @@ export function createEmitter(config: XrayConfig, exporter: SpanExporter): XrayE
   const tracerProvider = createTracerProvider(resolved, exporter);
   const tracer = tracerFromProvider(tracerProvider);
 
-  return {
+  let shutdownCalled = false;
+
+  const emitter: XrayEmitter = {
     config: resolved,
     startRequest: (req) => startRequest(resolved, tracer, req),
     endRequest: (ctx, res, err) => endRequest(resolved, ctx, res, err),
     flush: () => tracerProvider.forceFlush(),
-    shutdown: () => tracerProvider.shutdown(),
+    shutdown: () => {
+      shutdownCalled = true;
+      return tracerProvider.shutdown();
+    },
   };
+
+  // Auto-flush pending traces when the Node.js event loop drains.  This covers
+  // script-style programs that exit without calling shutdown() explicitly.
+  // Server programs keep the event loop alive so this only fires after the
+  // server is already closed.
+  if (typeof process !== 'undefined' && typeof process.once === 'function') {
+    process.once('beforeExit', () => {
+      if (!shutdownCalled) {
+        shutdownCalled = true;
+        void tracerProvider.shutdown();
+      }
+    });
+  }
+
+  return emitter;
 }
 
 function startRequest(
