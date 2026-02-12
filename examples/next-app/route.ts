@@ -14,7 +14,7 @@ export function createNextRoute(
     xrayCtx?.setUserId('user-123');
 
     return new Response(`next:${params.id ?? ''}:${body}`, { status: 200 });
-  }, xray);
+  });
 
   return { POST };
 }
