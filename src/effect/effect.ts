@@ -1,5 +1,5 @@
 import { Cause, Effect, Exit, Option } from 'effect';
-import { Headers, HttpApp, HttpRouter, HttpServerRequest } from '@effect/platform';
+import { Headers, HttpApp, HttpRouter, HttpServerError, HttpServerRequest } from '@effect/platform';
 import type {
   CaptureConfig,
   NormalizedRequest,
@@ -155,11 +155,17 @@ export function createEffectMiddleware(xray: XrayEmitter, options?: WrapOptions)
       }
 
       const error = Cause.squash(exit.cause);
+
+      // Resolve the HTTP response that the platform would send for this error
+      // (e.g. 404 for RouteNotFound, 500 for unhandled).  This mirrors what
+      // HttpApp.toWebHandler does internally via causeResponse.
+      const [errorResponse] = yield* HttpServerError.causeResponse(exit.cause);
+
       const log = xray.endRequest(
         ctx,
         {
-          statusCode: undefined,
-          headers: undefined,
+          statusCode: errorResponse.status,
+          headers: effectHeadersToRecord(errorResponse.headers),
           body: undefined,
           endTimeMs: Date.now(),
         },
@@ -185,7 +191,9 @@ export function createEffectMiddleware(xray: XrayEmitter, options?: WrapOptions)
             'warn',
             xray.config.logLevel,
             'xray: onResponse failed',
-            { error: errInner instanceof Error ? errInner.message : String(errInner) },
+            {
+              error: errInner instanceof Error ? errInner.message : String(errInner),
+            },
           );
         }
       }

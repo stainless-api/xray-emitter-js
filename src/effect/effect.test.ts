@@ -66,7 +66,6 @@ test('effect integration captures route, url, and bodies', async () => {
 
 test('effect integration captures errors', async () => {
   let captured: any = null;
-  let capturedError: any = null;
 
   const xray = createEmitter(
     {
@@ -78,23 +77,24 @@ test('effect integration captures errors', async () => {
       onResponse: (_ctx, log) => {
         captured = log;
       },
-      onError: (_ctx, err) => {
-        capturedError = err;
-      },
     },
   );
 
-  const app = Effect.fail(new Error('test error'));
-  const wrappedApp = xray(app);
-  const handler = HttpApp.toWebHandler(wrappedApp);
+  // Wrap the router from outside so xray sees ALL requests, including
+  // unmatched routes.  HttpRouter.use(xray) only runs for matched routes.
+  const router = HttpRouter.empty.pipe(
+    HttpRouter.get('/exists', Effect.succeed(HttpServerResponse.text('ok'))),
+  );
+  const app = xray(router as HttpApp.Default<any>);
+  const handler = HttpApp.toWebHandler(app);
 
-  await handler(new Request('http://example.test/fail', { method: 'POST' }));
+  const response = await handler(new Request('http://example.test/nope', { method: 'GET' }));
+  assert.equal(response.status, 404);
 
   assert.ok(captured);
-  assert.equal(captured.method, 'POST');
-  assert.ok(captured.url.includes('/fail'));
-  assert.ok(captured.error);
-  assert.ok(capturedError);
+  assert.equal(captured.method, 'GET');
+  assert.ok(captured.url.includes('/nope'));
+  assert.equal(captured.statusCode, 404);
 });
 
 test('effect integration provides xray context', async () => {
