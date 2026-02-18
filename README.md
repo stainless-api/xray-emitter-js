@@ -23,7 +23,7 @@ app.use(xray);
 
 app.use((req, _res, next) => {
   const ctx = getXrayContext(req);
-  ctx?.setUserId('user-123');
+  ctx?.setActor('tenant-123', 'user-123');
   next();
 });
 
@@ -31,7 +31,6 @@ app.get('/', (_req, res) => {
   res.send('ok');
 });
 ```
-
 
 ## Supported frameworks
 

@@ -18,7 +18,7 @@ const xray = createEmitter({ serviceName: 'my-service' });
 export const POST = xray(async (req, ctx) => {
   const params = await ctx.params;
   const body = await req.text();
-  getXrayContext(req)?.setUserId('user-123');
+  getXrayContext(req)?.setActor('tenant-123', 'user-123');
   return new Response(`id:${params.id ?? ''}:${body}`, { status: 200 });
 });
 ```

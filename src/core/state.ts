@@ -9,6 +9,7 @@ export type RequestState = {
   context: XrayContext;
   attributes: Record<string, AttributeValue>;
   events: Array<{ name: string; attributes?: Record<string, AttributeValue> }>;
+  tenantId?: string;
   userId?: string;
   sessionId?: string;
   error?: unknown;

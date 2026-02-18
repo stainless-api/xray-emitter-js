@@ -17,7 +17,7 @@ import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/remix'
 const xray = createEmitter({ serviceName: 'my-service' });
 
 const handler: RequestHandler = async (request) => {
-  getXrayContext(request)?.setUserId('user-123');
+  getXrayContext(request)?.setActor('tenant-123', 'user-123');
   const body = await request.text();
   return new Response(`remix:${body}`, { status: 200 });
 };

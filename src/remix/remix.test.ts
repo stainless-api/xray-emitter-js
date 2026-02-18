@@ -45,7 +45,7 @@ test('remix integration captures body and route', async () => {
 
   const baseHandler = async (request: Request) => {
     const xrayCtx = getXrayContext(request);
-    xrayCtx?.setUserId('user-123');
+    xrayCtx?.setActor('tenant-123', 'user-123');
     const body = await request.text();
     return new Response(`remix:${body}`, { status: 200 });
   };

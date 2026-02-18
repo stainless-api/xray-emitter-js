@@ -24,7 +24,7 @@ const router = HttpRouter.empty.pipe(
     '/',
     Effect.gen(function* () {
       const ctx = yield* currentXrayContext;
-      ctx?.setUserId('user-123');
+      ctx?.setActor('tenant-123', 'user-123');
       return HttpServerResponse.text('ok');
     }),
   ),
@@ -50,7 +50,7 @@ import { currentXrayContext } from '@stainlessdev/xray-emitter/effect';
 
 const handler = Effect.gen(function* () {
   const ctx = yield* currentXrayContext;
-  ctx?.setUserId('user-42');
+  ctx?.setActor('tenant-123', 'user-123');
   ctx?.setAttribute('plan', 'pro');
   return HttpServerResponse.text('ok');
 });

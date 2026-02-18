@@ -115,7 +115,7 @@ test('effect integration provides xray context', async () => {
 
   const app = Effect.gen(function* () {
     const ctx = yield* currentXrayContext;
-    ctx?.setUserId('user-42');
+    ctx?.setActor('tenant-42', 'user-42');
     ctx?.setAttribute('plan', 'pro');
     return HttpServerResponse.text('ok');
   });
@@ -129,5 +129,6 @@ test('effect integration provides xray context', async () => {
   assert.equal(text, 'ok');
 
   assert.ok(captured);
+  assert.equal(captured.tenantId, 'tenant-42');
   assert.equal(captured.userId, 'user-42');
 });

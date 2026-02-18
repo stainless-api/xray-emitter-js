@@ -29,6 +29,7 @@ export interface RequestLog {
   responseHeaders?: Record<string, string | string[]>;
   requestBody?: CapturedBody;
   responseBody?: CapturedBody;
+  tenantId?: string;
   userId?: string;
   sessionId?: string;
   error?: { message: string; type?: string; stack?: string };
@@ -40,6 +41,10 @@ export interface XrayContext {
   requestId: string;
   traceId?: string;
   spanId?: string;
+  setActor(tenantId: string, userId: string): void;
+  /**
+   * @deprecated Use `setActor(tenantId, userId)` to record tenant and user IDs together.
+   */
   setUserId(id: string): void;
   setSessionId(id: string): void;
   setAttribute(key: string, value: AttributeValue): void;

@@ -14,7 +14,7 @@ const router = HttpRouter.empty.pipe(
     '/',
     Effect.gen(function* () {
       const ctx = yield* currentXrayContext;
-      ctx?.setUserId('user-123');
+      ctx?.setActor('tenant-123', 'user-123');
       return HttpServerResponse.text('Hello Effect!');
     }),
   ),

@@ -19,6 +19,7 @@ import {
   AttributeKeyResponseBody,
   AttributeKeyResponseBodyEncoding,
   AttributeKeyResponseBodyTruncated,
+  AttributeKeyTenantID,
 } from './attrkey';
 
 export function setHeaderAttributes(
@@ -281,6 +282,10 @@ export function setRouteAttribute(span: Span, route: string | undefined): void {
 
 export function setUserIdAttribute(span: Span, userId: string): void {
   span.setAttribute(ATTR_USER_ID, userId);
+}
+
+export function setTenantIdAttribute(span: Span, tenantId: string): void {
+  span.setAttribute(AttributeKeyTenantID, tenantId);
 }
 
 export function setRequestIdAttribute(span: Span, requestId: string): void {
