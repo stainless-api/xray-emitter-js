@@ -3,6 +3,7 @@ import test from 'node:test';
 import { ExportResultCode } from '@opentelemetry/core';
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { createEmitter } from './emitter';
+import { getContextState } from './state';
 
 function createNoopExporter(): SpanExporter {
   return {
@@ -225,6 +226,46 @@ test('setActor can record tenant without user', async () => {
   assert.equal('user.id' in (spans[0]?.attributes ?? {}), false);
 });
 
+test('setActor logs when span attributes fail', () => {
+  const errors: Array<{ msg: string; fields?: Record<string, unknown> }> = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      logger: {
+        debug() {},
+        info() {},
+        warn() {},
+        error(msg, fields) {
+          errors.push({ msg, fields });
+        },
+      },
+      logLevel: 'warn',
+    },
+    createNoopExporter(),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/actor-log-failure',
+    headers: {},
+    startTimeMs: 0,
+  });
+  const state = getContextState(ctx);
+  assert.ok(state?.span);
+  if (state?.span) {
+    state.span.setAttribute = (() => {
+      throw new Error('setAttribute failed');
+    }) as typeof state.span.setAttribute;
+  }
+
+  ctx.setActor('tenant-123', 'user-123');
+
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0]?.msg, 'xray: setActor failed');
+  assert.equal(errors[0]?.fields?.['error'], 'setAttribute failed');
+});
+
 test('setUserId remains supported for compatibility', () => {
   const xray = createEmitter(
     {
@@ -249,4 +290,44 @@ test('setUserId remains supported for compatibility', () => {
   });
 
   assert.equal(log.userId, 'user-legacy');
+});
+
+test('setUserId logs when span attributes fail', () => {
+  const errors: Array<{ msg: string; fields?: Record<string, unknown> }> = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      logger: {
+        debug() {},
+        info() {},
+        warn() {},
+        error(msg, fields) {
+          errors.push({ msg, fields });
+        },
+      },
+      logLevel: 'warn',
+    },
+    createNoopExporter(),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/user-log-failure',
+    headers: {},
+    startTimeMs: 0,
+  });
+  const state = getContextState(ctx);
+  assert.ok(state?.span);
+  if (state?.span) {
+    state.span.setAttribute = (() => {
+      throw new Error('setAttribute failed');
+    }) as typeof state.span.setAttribute;
+  }
+
+  ctx.setUserId('user-123');
+
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0]?.msg, 'xray: setUserId failed');
+  assert.equal(errors[0]?.fields?.['error'], 'setAttribute failed');
 });
