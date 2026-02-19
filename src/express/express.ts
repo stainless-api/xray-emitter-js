@@ -28,6 +28,10 @@ type ExpressEmitter = ExpressMiddleware & {
   shutdown: XrayEmitter['shutdown'];
 };
 
+/**
+ * Create Express middleware that instruments requests and exposes
+ * `flush()`/`shutdown()` on the returned middleware function.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): ExpressEmitter {
   const emitter = createNodeEmitter(config);
   const middleware = createExpressMiddleware(emitter, options) as ExpressEmitter;
@@ -36,6 +40,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions):
   return middleware;
 }
 
+/**
+ * Create Express middleware from an existing core `XrayEmitter`.
+ */
 export function createExpressMiddleware(
   xray: XrayEmitter,
   options?: WrapOptions,

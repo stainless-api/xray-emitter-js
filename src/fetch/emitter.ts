@@ -8,6 +8,11 @@ import {
   type XrayRuntimeConfig,
 } from '../core/index';
 
+/**
+ * Create a fetch/edge runtime emitter using OTLP HTTP transport by default.
+ *
+ * Pass `config.exporter.instance` to provide a custom `SpanExporter`.
+ */
 export function createEmitter(config: XrayRuntimeConfig) {
   const resolved = normalizeConfig(config);
   const exporter =

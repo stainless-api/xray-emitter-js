@@ -35,6 +35,12 @@ import type {
   XrayEmitter,
 } from './types';
 
+/**
+ * Create a runtime-agnostic X-ray emitter with a provided SpanExporter.
+ *
+ * Most applications should use a runtime adapter (`/node`, `/fetch`,
+ * or framework-specific entrypoints) unless they need custom transport logic.
+ */
 export function createEmitter(config: XrayConfig, exporter: SpanExporter): XrayEmitter {
   const resolved = normalizeConfig(config);
   if (!exporter) {

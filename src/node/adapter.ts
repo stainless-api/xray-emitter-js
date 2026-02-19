@@ -24,18 +24,51 @@ import {
   generateRequestId,
 } from '../core/internal';
 
+/**
+ * Handler signature for `node:http` request listeners.
+ */
 export type NodeHttpHandler = (req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
 
+/**
+ * Per-handler overrides for `wrapHttpHandler`.
+ */
 export interface WrapOptions {
+  /**
+   * Explicit route pattern for this handler (for example `/users/:id`).
+   */
   route?: string;
+  /**
+   * Explicit request ID. Skips header lookup/generation when provided.
+   */
   requestId?: string;
+  /**
+   * Per-handler capture overrides.
+   */
   capture?: Partial<CaptureConfig>;
+  /**
+   * Per-handler redaction overrides.
+   */
   redaction?: Partial<RedactionConfig>;
+  /**
+   * Hook called after request context is created.
+   */
   onRequest?: (ctx: XrayContext) => void;
+  /**
+   * Hook called after the request has been finalized and logged.
+   */
   onResponse?: (ctx: XrayContext, log: RequestLog) => void;
+  /**
+   * Hook called when request handling fails.
+   */
   onError?: (ctx: XrayContext, err: unknown) => void;
 }
 
+/**
+ * Wrap a `node:http` request handler with X-ray instrumentation.
+ *
+ * The wrapper binds `XrayContext` to both `req` and `res`, captures configured
+ * request/response metadata, and ensures a response request ID header is set.
+ */
 export function wrapHttpHandler(
   handler: NodeHttpHandler,
   xray: XrayEmitter,
@@ -222,6 +255,9 @@ export function wrapHttpHandler(
   };
 }
 
+/**
+ * Retrieve the `XrayContext` bound to a Node `IncomingMessage`.
+ */
 export function getXrayContext(req: IncomingMessage): XrayContext | undefined {
   return getXrayContextFromObject(req);
 }

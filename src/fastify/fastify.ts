@@ -32,6 +32,10 @@ type FastifyEmitter = ((instance: FastifyInstance) => void) & {
   shutdown: XrayEmitter['shutdown'];
 };
 
+/**
+ * Create a Fastify plugin-style registrar that installs X-ray hooks and
+ * exposes `flush()`/`shutdown()`.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): FastifyEmitter {
   const emitter = createNodeEmitter(config);
   const register = ((instance: FastifyInstance) => {
@@ -42,6 +46,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions):
   return register;
 }
 
+/**
+ * Add X-ray request lifecycle hooks to an existing Fastify instance.
+ */
 export function addFastifyHooks(
   instance: FastifyInstance,
   xray: XrayEmitter,
