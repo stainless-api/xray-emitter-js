@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@stainlessdev/xray-emitter": ["../src/core/index.ts"],
+      "@stainlessdev/xray-emitter/internal": ["../src/core/internal.ts"],
+      "@stainlessdev/xray-emitter/node": ["../src/node/node.ts"],
+      "@stainlessdev/xray-emitter/fetch": ["../src/fetch/fetch.ts"],
+      "@stainlessdev/xray-emitter/express": ["../src/express/express.ts"],
+      "@stainlessdev/xray-emitter/hono": ["../src/hono/hono.ts"],
+      "@stainlessdev/xray-emitter/fastify": ["../src/fastify/fastify.ts"],
+      "@stainlessdev/xray-emitter/next": ["../src/next/next.ts"],
+      "@stainlessdev/xray-emitter/remix": ["../src/remix/remix.ts"],
+      "@stainlessdev/xray-emitter/effect": ["../src/effect/effect.ts"]
+    }
+  }
+}
