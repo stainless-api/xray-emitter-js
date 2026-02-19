@@ -68,11 +68,6 @@ jobs:
       - name: Update version
         run: npm version ${{ steps.meta.outputs.version }} --no-git-tag-version --allow-same-version
 
-      - name: Publish
-        run: pnpm publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Commit and tag release
         if: ${{ inputs.version != '' }}
         run: |
@@ -91,3 +86,8 @@ jobs:
             git tag "$TAG"
           fi
           git push origin HEAD --tags
+
+      - name: Publish
+        run: pnpm publish --access public --no-git-checks --tag "${{ steps.meta.outputs.npm_tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
