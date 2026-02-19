@@ -105,8 +105,10 @@ function startRequest(
           if (userId) {
             setUserIdAttribute(span, userId);
           }
-        } catch {
-          // Ignore span attribute errors.
+        } catch (err) {
+          logWithLevel(config.logger, 'error', config.logLevel, 'xray: setActor failed', {
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     },
@@ -120,8 +122,10 @@ function startRequest(
       if (span && id) {
         try {
           setUserIdAttribute(span, id);
-        } catch {
-          // Ignore span attribute errors.
+        } catch (err) {
+          logWithLevel(config.logger, 'error', config.logLevel, 'xray: setUserId failed', {
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     },
