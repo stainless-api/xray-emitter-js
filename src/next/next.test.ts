@@ -47,7 +47,7 @@ test('next integration captures body and route', async () => {
     const params = await ctx.params;
     const body = await req.text();
     const xrayCtx = getXrayContext(req);
-    xrayCtx?.setUserId('user-123');
+    xrayCtx?.setActor('tenant-123', 'user-123');
     return new Response(`next:${params.id ?? ''}:${body}`, { status: 200 });
   });
 

@@ -8,6 +8,7 @@ export const AttributeKeyResponseBody = 'http.response.body';
 export const AttributeKeyResponseBodyEncoding = 'http.response.body.encoding';
 export const AttributeKeyResponseBodyTruncated = 'http.response.body.truncated';
 export const AttributeKeySpanDrop = 'stainlessxray.internal.drop';
+export const AttributeKeyTenantID = 'stainlessxray.tenant.id';
 export const AttributeKeyXrayCaptureErrorCode = 'xray.capture_error_code';
 export const AttributeKeyXrayErrorThrown = 'xray.error_thrown';
 export const AttributeKeyXrayHeadersTruncated = 'xray.headers_truncated';

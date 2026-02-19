@@ -34,7 +34,7 @@ import { getXrayContext } from '@stainlessdev/xray-emitter/node';
 
 const handler = wrapHttpHandler((req, res) => {
   const ctx = getXrayContext(req);
-  ctx?.setUserId('user-123');
+  ctx?.setActor('tenant-123', 'user-123');
   res.end('ok');
 }, xray);
 ```

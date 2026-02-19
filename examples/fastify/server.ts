@@ -14,9 +14,9 @@ xray(fastify);
 
 fastify.addHook('onRequest', async (request) => {
   const anyRequest = request as typeof request & {
-    xray?: { setUserId: (id: string) => void };
+    xray?: { setActor: (tenantId: string, userId: string) => void };
   };
-  anyRequest.xray?.setUserId('user-123');
+  anyRequest.xray?.setActor('tenant-123', 'user-123');
 });
 
 fastify.get('/', async () => {

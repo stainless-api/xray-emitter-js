@@ -14,6 +14,7 @@ import {
   setResponseBodySizeAttribute,
   setResponseStatusAttribute,
   setRouteAttribute,
+  setTenantIdAttribute,
   setUserIdAttribute,
 } from './attributes';
 import {
@@ -85,6 +86,25 @@ function startRequest(
     requestId: explicitRequestId ?? '',
     traceId: span?.spanContext().traceId,
     spanId: span?.spanContext().spanId,
+    setActor: (tenantId, userId) => {
+      const state = getContextState(context);
+      if (!state) {
+        return;
+      }
+      state.tenantId = tenantId;
+      state.userId = userId || undefined;
+      if (span) {
+        try {
+          setTenantIdAttribute(span, tenantId);
+          if (userId) {
+            setUserIdAttribute(span, userId);
+          }
+        } catch {
+          // Ignore span attribute errors.
+        }
+      }
+    },
+    // Deprecated compatibility alias; prefer setActor(tenantId, userId).
     setUserId: (id) => {
       const state = getContextState(context);
       if (!state) {
@@ -215,6 +235,7 @@ function endRequest(
     responseHeaders: capture.responseHeaders ? sanitizeHeaderValues(res.headers) : undefined,
     requestBody: capture.requestBody === 'none' ? undefined : request.body,
     responseBody: capture.responseBody === 'none' ? undefined : res.body,
+    tenantId: state.tenantId ?? undefined,
     userId: state.userId ?? undefined,
     sessionId: state.sessionId ?? undefined,
     error: buildError(err ?? state.error),
@@ -266,6 +287,9 @@ function endRequest(
       if (redacted.responseBody) {
         setResponseBodyAttributes(span, redacted.responseBody);
         setResponseBodySizeAttribute(span, redacted.responseBody.bytes);
+      }
+      if (state.tenantId != null) {
+        setTenantIdAttribute(span, state.tenantId);
       }
       if (state.userId) {
         setUserIdAttribute(span, state.userId);

@@ -168,3 +168,14 @@ test('setRequestIdAttribute sets http.request.id', () => {
   setRequestIdAttribute?.(span as unknown as Span, 'req-123');
   assert.equal(span.attributes['http.request.id'], 'req-123');
 });
+
+test('setTenantIdAttribute sets stainlessxray.tenant.id', () => {
+  const span = makeSpan();
+  const setTenantIdAttribute = (attributes as Record<string, unknown>).setTenantIdAttribute as
+    | ((span: Span, tenantId: string) => void)
+    | undefined;
+
+  assert.equal(typeof setTenantIdAttribute, 'function');
+  setTenantIdAttribute?.(span as unknown as Span, 'tenant-123');
+  assert.equal(span.attributes['stainlessxray.tenant.id'], 'tenant-123');
+});

@@ -21,7 +21,7 @@ const xray = createEmitter({ serviceName: 'my-service' });
 app.use('*', xray);
 
 app.use('*', async (c, next) => {
-  c.get('xray')?.setUserId('user-123');
+  c.get('xray')?.setActor('tenant-123', 'user-123');
   await next();
 });
 

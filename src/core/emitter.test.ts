@@ -160,3 +160,93 @@ test('endRequest generates requestId when missing', () => {
   assert.ok(ctx.requestId);
   assert.equal(typeof ctx.requestId, 'string');
 });
+
+test('setActor records tenant and user IDs', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/actor',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setActor('tenant-123', 'user-123');
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.equal(log.tenantId, 'tenant-123');
+  assert.equal(log.userId, 'user-123');
+  assert.equal(spans[0]?.attributes['stainlessxray.tenant.id'], 'tenant-123');
+  assert.equal(spans[0]?.attributes['user.id'], 'user-123');
+});
+
+test('setActor can record tenant without user', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/actor-tenant-only',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setActor('tenant-123', '');
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.equal(log.tenantId, 'tenant-123');
+  assert.equal(log.userId, undefined);
+  assert.equal(spans[0]?.attributes['stainlessxray.tenant.id'], 'tenant-123');
+  assert.equal('user.id' in (spans[0]?.attributes ?? {}), false);
+});
+
+test('setUserId remains supported for compatibility', () => {
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+    },
+    createNoopExporter(),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/user-only',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setUserId('user-legacy');
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  assert.equal(log.userId, 'user-legacy');
+});

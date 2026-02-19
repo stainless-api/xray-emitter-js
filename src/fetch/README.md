@@ -39,7 +39,7 @@ import { getXrayContext } from '@stainlessdev/xray-emitter/fetch';
 
 const handler = wrapFetch(async (req) => {
   const ctx = getXrayContext(req);
-  ctx?.setUserId('user-123');
+  ctx?.setActor('tenant-123', 'user-123');
   return new Response('ok');
 }, xray);
 ```
