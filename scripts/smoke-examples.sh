@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 export STAINLESS_XRAY_ENDPOINT_URL="${STAINLESS_XRAY_ENDPOINT_URL:-http://xray:foobar@127.0.0.1:4318}"
+export STAINLESS_XRAY_SPAN_PROCESSOR="${STAINLESS_XRAY_SPAN_PROCESSOR:-simple}"
 
 LOG_DIR="$(mktemp -d)"
 COLLECTOR_PID=""

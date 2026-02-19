@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { normalizeConfig } from './config';
 
-const envKeys = ['STAINLESS_XRAY_ENDPOINT_URL'] as const;
+const envKeys = ['STAINLESS_XRAY_ENDPOINT_URL', 'STAINLESS_XRAY_SPAN_PROCESSOR'] as const;
 
 function withEnv(vars: Partial<Record<(typeof envKeys)[number], string>>, fn: () => void): void {
   const previous: Partial<Record<(typeof envKeys)[number], string | undefined>> = {};
@@ -102,4 +102,55 @@ test('normalizeConfig enables body capture by default', () => {
   });
   assert.equal(cfg.capture.requestBody, 'text');
   assert.equal(cfg.capture.responseBody, 'text');
+});
+
+test('normalizeConfig uses STAINLESS_XRAY_SPAN_PROCESSOR env var as fallback', () => {
+  withEnv(
+    {
+      STAINLESS_XRAY_SPAN_PROCESSOR: 'simple',
+    },
+    () => {
+      const cfg = normalizeConfig({
+        serviceName: 'test',
+        endpointUrl: 'https://collector.example.test',
+      });
+      assert.equal(cfg.exporter.spanProcessor, 'simple');
+    },
+  );
+});
+
+test('normalizeConfig prefers explicit exporter.spanProcessor over env var', () => {
+  withEnv(
+    {
+      STAINLESS_XRAY_SPAN_PROCESSOR: 'batch',
+    },
+    () => {
+      const cfg = normalizeConfig({
+        serviceName: 'test',
+        endpointUrl: 'https://collector.example.test',
+        exporter: {
+          spanProcessor: 'simple',
+        },
+      });
+      assert.equal(cfg.exporter.spanProcessor, 'simple');
+    },
+  );
+});
+
+test('normalizeConfig rejects invalid STAINLESS_XRAY_SPAN_PROCESSOR values', () => {
+  withEnv(
+    {
+      STAINLESS_XRAY_SPAN_PROCESSOR: 'fast',
+    },
+    () => {
+      assert.throws(
+        () =>
+          normalizeConfig({
+            serviceName: 'test',
+            endpointUrl: 'https://collector.example.test',
+          }),
+        /STAINLESS_XRAY_SPAN_PROCESSOR must be "simple" or "batch"/,
+      );
+    },
+  );
 });

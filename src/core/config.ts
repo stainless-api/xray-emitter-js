@@ -336,11 +336,12 @@ function normalizeExporter(
   const resolvedEndpoint = normalizeExporterEndpoint(cfg?.endpointUrl ?? endpointUrl);
   const rawHeaders = cfg?.headers ?? defaultExporterBase.headers ?? {};
   const parsed = applyEndpointAuth(resolvedEndpoint, rawHeaders);
+  const spanProcessor = resolveSpanProcessor(cfg?.spanProcessor);
   const exporter: ExporterConfig = {
     endpointUrl: parsed.endpointUrl,
     headers: parsed.headers,
     timeoutMs: cfg?.timeoutMs ?? defaultExporterBase.timeoutMs,
-    spanProcessor: cfg?.spanProcessor ?? defaultExporterBase.spanProcessor,
+    spanProcessor,
   };
 
   return exporter;
@@ -369,6 +370,29 @@ function normalizeStringList(values: string[] | undefined): string[] {
     return [];
   }
   return values.map((entry) => entry.trim()).filter(Boolean);
+}
+
+function resolveSpanProcessor(
+  configured: ExporterConfig['spanProcessor'] | undefined,
+): ExporterConfig['spanProcessor'] {
+  if (configured) {
+    return configured;
+  }
+
+  const envProcessor =
+    typeof process !== 'undefined' ? process.env?.['STAINLESS_XRAY_SPAN_PROCESSOR'] : undefined;
+  if (!envProcessor) {
+    return defaultExporterBase.spanProcessor;
+  }
+
+  if (envProcessor === 'simple' || envProcessor === 'batch') {
+    return envProcessor;
+  }
+
+  throw new XrayConfigError(
+    'INVALID_CONFIG',
+    'STAINLESS_XRAY_SPAN_PROCESSOR must be "simple" or "batch"',
+  );
 }
 
 const textEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
