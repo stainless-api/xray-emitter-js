@@ -22,15 +22,42 @@ import {
 } from '../core/internal';
 
 export interface WrapOptions {
+  /**
+   * Explicit route pattern for this handler (for example `/users/:id`).
+   */
   route?: string;
+  /**
+   * Explicit request ID. Skips header lookup/generation when provided.
+   */
   requestId?: string;
+  /**
+   * Per-handler capture overrides.
+   */
   capture?: Partial<CaptureConfig>;
+  /**
+   * Per-handler redaction overrides.
+   */
   redaction?: Partial<RedactionConfig>;
+  /**
+   * Hook called after request context is created.
+   */
   onRequest?: (ctx: XrayContext) => void;
+  /**
+   * Hook called after the request has been finalized and logged.
+   */
   onResponse?: (ctx: XrayContext, log: RequestLog) => void;
+  /**
+   * Hook called when request handling fails.
+   */
   onError?: (ctx: XrayContext, err: unknown) => void;
 }
 
+/**
+ * Wrap a fetch-style handler with X-ray instrumentation.
+ *
+ * This variant may replace the request/response objects to safely capture
+ * bodies and inject a request ID response header when needed.
+ */
 export function wrapFetch(
   handler: (req: Request) => Response | Promise<Response>,
   xray: XrayEmitter,
@@ -232,6 +259,13 @@ export function wrapFetch(
   };
 }
 
+/**
+ * Wrap a fetch-style handler while preserving original request/response objects
+ * whenever possible.
+ *
+ * If a missing request ID header must be injected and response headers are
+ * immutable, this wrapper may still replace the response object.
+ */
 export function wrapFetchPreserve(
   handler: (req: Request) => Response | Promise<Response>,
   xray: XrayEmitter,
@@ -414,6 +448,9 @@ export function wrapFetchPreserve(
   };
 }
 
+/**
+ * Retrieve the `XrayContext` bound to a fetch `Request`.
+ */
 export function getXrayContext(req: Request): XrayContext | undefined {
   return getXrayContextFromObject(req);
 }

@@ -27,6 +27,10 @@ type RemixEmitter = ((handler: RequestHandler) => RequestHandler) & {
   shutdown: XrayEmitter['shutdown'];
 };
 
+/**
+ * Create a Remix/React Router request-handler wrapper and expose
+ * `flush()`/`shutdown()`.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): RemixEmitter {
   const emitter = createFetchEmitter(config);
   const wrap = ((handler: RequestHandler) =>
@@ -36,6 +40,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions):
   return wrap;
 }
 
+/**
+ * Wrap a Remix request handler using an existing core `XrayEmitter`.
+ */
 export function wrapRemixRequestHandler(
   handler: RequestHandler,
   xray: XrayEmitter,

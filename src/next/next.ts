@@ -34,6 +34,9 @@ type NextEmitter = ((handler: NextRouteHandler) => ReturnType<typeof wrapNextRou
   shutdown: XrayEmitter['shutdown'];
 };
 
+/**
+ * Create a Next.js App Router wrapper and expose `flush()`/`shutdown()`.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): NextEmitter {
   const emitter = createFetchEmitter(config);
   const wrap = ((handler: NextRouteHandler) =>
@@ -43,6 +46,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions):
   return wrap;
 }
 
+/**
+ * Wrap a Next.js route handler using an existing core `XrayEmitter`.
+ */
 export function wrapNextRoute(
   handler: NextRouteHandler,
   xray: XrayEmitter,

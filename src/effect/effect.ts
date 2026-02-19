@@ -33,12 +33,33 @@ export type {
 } from '../core/index';
 
 export interface WrapOptions {
+  /**
+   * Explicit route pattern for this handler (for example `/users/:id`).
+   */
   route?: string;
+  /**
+   * Explicit request ID. Skips header lookup/generation when provided.
+   */
   requestId?: string;
+  /**
+   * Per-handler capture overrides.
+   */
   capture?: Partial<CaptureConfig>;
+  /**
+   * Per-handler redaction overrides.
+   */
   redaction?: Partial<RedactionConfig>;
+  /**
+   * Hook called after request context is created.
+   */
   onRequest?: (ctx: XrayContext) => void;
+  /**
+   * Hook called after the request has been finalized and logged.
+   */
   onResponse?: (ctx: XrayContext, log: RequestLog) => void;
+  /**
+   * Hook called when request handling fails.
+   */
   onError?: (ctx: XrayContext, err: unknown) => void;
 }
 
@@ -49,6 +70,9 @@ type EffectEmitter = EffectMiddleware & {
   shutdown: XrayEmitter['shutdown'];
 };
 
+/**
+ * Create Effect middleware and expose `flush()`/`shutdown()`.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions): EffectEmitter {
   const emitter = createFetchEmitter(config);
   const middleware = createEffectMiddleware(emitter, options) as EffectEmitter;
@@ -57,6 +81,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: WrapOptions):
   return middleware;
 }
 
+/**
+ * Create Effect middleware from an existing core `XrayEmitter`.
+ */
 export function createEffectMiddleware(xray: XrayEmitter, options?: WrapOptions): EffectMiddleware {
   return (<E, R>(httpApp: HttpApp.Default<E, R>): HttpApp.Default<E, R> =>
     Effect.gen(function* () {

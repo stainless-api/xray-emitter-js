@@ -2,28 +2,89 @@ import { encodeBase64 } from './encoding';
 import { normalizeRoutePattern } from './route';
 import type { Logger, LogLevel } from './types';
 
+/**
+ * Exporter settings used by the OTLP trace exporter.
+ */
 export interface ExporterConfig {
+  /**
+   * OTLP trace endpoint URL. `/v1/traces` is appended if missing.
+   */
   endpointUrl: string;
+  /**
+   * Additional OTLP exporter headers (for example `Authorization`).
+   */
   headers?: Record<string, string>;
+  /**
+   * Export timeout in milliseconds.
+   */
   timeoutMs: number;
+  /**
+   * Span processor mode.
+   *
+   * Use `batch` (default) for lower overhead in long-lived services.
+   * Use `simple` to export each span immediately (useful for tests and
+   * short-lived runtimes).
+   */
   spanProcessor: 'simple' | 'batch';
 }
 
+/**
+ * Request/response capture settings.
+ */
 export interface CaptureConfig {
+  /**
+   * Include sanitized request headers in logs/spans.
+   */
   requestHeaders: boolean;
+  /**
+   * Include sanitized response headers in logs/spans.
+   */
   responseHeaders: boolean;
+  /**
+   * Request body capture mode.
+   *
+   * `none` disables capture, `text` records UTF-8 text, and `base64` preserves
+   * binary payloads safely.
+   */
   requestBody: 'none' | 'text' | 'base64';
+  /**
+   * Response body capture mode.
+   *
+   * `none` disables capture, `text` records UTF-8 text, and `base64` preserves
+   * binary payloads safely.
+   */
   responseBody: 'none' | 'text' | 'base64';
+  /**
+   * Maximum captured bytes per request/response body before truncation.
+   */
   maxBodyBytes: number;
 }
 
+/**
+ * Redaction settings for logs and captured payloads.
+ */
 export interface RedactionConfig {
+  /**
+   * Header names to redact (case-insensitive).
+   */
   headers: string[];
+  /**
+   * Query parameter names to redact (case-insensitive).
+   */
   queryParams: string[];
+  /**
+   * JSON paths to redact in captured JSON bodies.
+   */
   bodyJsonPaths: string[];
+  /**
+   * Replacement value used for redacted data.
+   */
   replacement: string;
 }
 
+/**
+ * Request ID extraction and propagation settings.
+ */
 export interface RequestIdConfig {
   /**
    * Response header name to read request IDs from. This is normalized to
@@ -32,35 +93,86 @@ export interface RequestIdConfig {
   header: string;
 }
 
+/**
+ * Route normalization settings.
+ */
 export interface RouteConfig {
+  /**
+   * When true, normalize route patterns before emitting logs.
+   */
   normalize: boolean;
+  /**
+   * Optional custom normalizer. Defaults to X-ray's built-in normalizer.
+   */
   normalizer?: (path: string) => string;
 }
 
+/**
+ * Core emitter configuration.
+ */
 export interface XrayConfig {
+  /**
+   * Logical service name for all emitted request logs.
+   */
   serviceName: string;
+  /**
+   * Optional deployment environment label.
+   */
   environment?: string;
+  /**
+   * Optional service version label.
+   */
   version?: string;
+  /**
+   * Logger for internal X-ray diagnostics.
+   */
   logger?: Logger;
+  /**
+   * Minimum log level for internal diagnostics.
+   */
   logLevel?: LogLevel;
+  /**
+   * OTLP endpoint URL. Falls back to `STAINLESS_XRAY_ENDPOINT_URL`.
+   */
   endpointUrl?: string;
+  /**
+   * Exporter overrides.
+   */
   exporter?: Partial<ExporterConfig>;
+  /**
+   * Capture overrides.
+   */
   capture?: Partial<CaptureConfig>;
+  /**
+   * Redaction overrides.
+   */
   redaction?: Partial<RedactionConfig>;
   /**
    * Request ID resolution settings. The header is read from response headers at
    * the end of the request.
    */
   requestId?: Partial<RequestIdConfig>;
+  /**
+   * Route normalization overrides.
+   */
   route?: Partial<RouteConfig>;
 }
 
+/**
+ * Runtime config accepted by framework/node/fetch entrypoints.
+ */
 export type XrayRuntimeConfig = Omit<XrayConfig, 'exporter'> & {
   exporter?: Partial<ExporterConfig> & {
+    /**
+     * Custom exporter instance. When provided, endpoint/header options are ignored.
+     */
     instance?: import('@opentelemetry/sdk-trace-base').SpanExporter;
   };
 };
 
+/**
+ * Fully-resolved configuration returned by `normalizeConfig`.
+ */
 export interface ResolvedXrayConfig {
   serviceName: string;
   environment?: string;
@@ -113,6 +225,12 @@ export class XrayConfigError extends Error {
   }
 }
 
+/**
+ * Normalize and validate user configuration.
+ *
+ * Applies defaults, validates required fields, and resolves environment
+ * fallbacks such as `STAINLESS_XRAY_ENDPOINT_URL`.
+ */
 export function normalizeConfig(config: XrayConfig): ResolvedXrayConfig {
   if (!config || !config.serviceName || !config.serviceName.trim()) {
     throw new XrayConfigError('INVALID_CONFIG', 'serviceName is required');

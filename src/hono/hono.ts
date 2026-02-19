@@ -31,6 +31,9 @@ type HonoMiddleware = (
   next: () => Promise<void>,
 ) => Promise<void | Response>;
 
+/**
+ * Hono env helper that adds `xray` to `c.get(...)` variables.
+ */
 export type HonoXrayEnv = {
   Variables: { xray?: XrayContext };
 };
@@ -41,9 +44,15 @@ type HonoEmitter = HonoMiddleware & {
 };
 
 export interface HonoWrapOptions extends WrapOptions {
+  /**
+   * Optional route resolver used to capture Hono route patterns.
+   */
   routePath?(ctx: HonoCompatibleContext, index?: number): string;
 }
 
+/**
+ * Create Hono middleware and expose `flush()`/`shutdown()` helpers.
+ */
 export function createEmitter(config: XrayRuntimeConfig, options?: HonoWrapOptions): HonoEmitter {
   const emitter = createFetchEmitter(config);
   const middleware = createHonoMiddleware(emitter, options) as HonoEmitter;
@@ -52,6 +61,9 @@ export function createEmitter(config: XrayRuntimeConfig, options?: HonoWrapOptio
   return middleware;
 }
 
+/**
+ * Create Hono middleware from an existing core `XrayEmitter`.
+ */
 export function createHonoMiddleware(xray: XrayEmitter, options?: HonoWrapOptions): HonoMiddleware {
   const routePathFn = options?.routePath;
 
