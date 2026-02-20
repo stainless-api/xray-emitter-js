@@ -79,7 +79,8 @@
     "example:hono": "pnpm --filter ./examples/hono start",
     "example:next": "pnpm --filter ./examples/next-app start",
     "example:node-http": "pnpm --filter ./examples/node-http start",
-    "example:remix": "pnpm --filter ./examples/remix-app start"
+    "example:remix": "pnpm --filter ./examples/remix-app start",
+    "examples:smoke": "./scripts/smoke-examples.sh"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
