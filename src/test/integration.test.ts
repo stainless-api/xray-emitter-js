@@ -180,9 +180,10 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
         resolve({ stderr });
       });
 
-      // Wait for port -> make a request -> SIGTERM.
+      // Wait for port -> make a request -> allow time for OTLP export -> SIGTERM.
       waitForPort(port)
         .then(() => httpGet(`http://127.0.0.1:${port}/`))
+        .then(() => new Promise((r) => setTimeout(r, 200)))
         .then(() => {
           child.kill('SIGTERM');
         })
