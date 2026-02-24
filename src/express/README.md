@@ -23,7 +23,7 @@ app.use(xray);
 
 app.use((req, _res, next) => {
   const ctx = getXrayContext(req);
-  ctx?.setActor('tenant-123', 'user-123');
+  ctx?.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
   next();
 });
 

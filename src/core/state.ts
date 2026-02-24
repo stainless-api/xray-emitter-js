@@ -10,7 +10,11 @@ export type RequestState = {
   attributes: Record<string, AttributeValue>;
   events: Array<{ name: string; attributes?: Record<string, AttributeValue> }>;
   tenantId?: string;
+  tenantSlug?: string;
+  userEmail?: string;
+  userFullName?: string;
   userId?: string;
+  userName?: string;
   sessionId?: string;
   error?: unknown;
   captureOverride?: Partial<CaptureConfig>;

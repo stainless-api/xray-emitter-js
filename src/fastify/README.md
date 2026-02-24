@@ -21,7 +21,7 @@ const xray = createEmitter({ serviceName: 'my-service' });
 xray(app);
 
 app.addHook('onRequest', async (request) => {
-  request.xray?.setActor('tenant-123', 'user-123');
+  request.xray?.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
 });
 
 app.get('/', async () => ({ ok: true }));

@@ -15,7 +15,11 @@ import {
   setResponseStatusAttribute,
   setRouteAttribute,
   setTenantIdAttribute,
+  setTenantSlugAttribute,
+  setUserEmailAttribute,
+  setUserFullNameAttribute,
   setUserIdAttribute,
+  setUserNameAttribute,
 } from './attributes';
 import {
   createTracerProvider,
@@ -31,6 +35,7 @@ import type {
   NormalizedRequest,
   NormalizedResponse,
   RequestLog,
+  SetActorParams,
   XrayContext,
   XrayEmitter,
 } from './types';
@@ -92,18 +97,34 @@ function startRequest(
     requestId: explicitRequestId ?? '',
     traceId: span?.spanContext().traceId,
     spanId: span?.spanContext().spanId,
-    setActor: (tenantId, userId) => {
+    setActor: (params: SetActorParams) => {
       const state = getContextState(context);
       if (!state) {
         return;
       }
-      state.tenantId = tenantId;
-      state.userId = userId || undefined;
+      state.tenantId = params.tenantId;
+      state.tenantSlug = params.tenantSlug || undefined;
+      state.userEmail = params.userEmail || undefined;
+      state.userFullName = params.userFullName || undefined;
+      state.userId = params.userId || undefined;
+      state.userName = params.userName || undefined;
       if (span) {
         try {
-          setTenantIdAttribute(span, tenantId);
-          if (userId) {
-            setUserIdAttribute(span, userId);
+          setTenantIdAttribute(span, params.tenantId);
+          if (params.tenantSlug) {
+            setTenantSlugAttribute(span, params.tenantSlug);
+          }
+          if (params.userEmail) {
+            setUserEmailAttribute(span, params.userEmail);
+          }
+          if (params.userFullName) {
+            setUserFullNameAttribute(span, params.userFullName);
+          }
+          if (params.userId) {
+            setUserIdAttribute(span, params.userId);
+          }
+          if (params.userName) {
+            setUserNameAttribute(span, params.userName);
           }
         } catch (err) {
           logWithLevel(config.logger, 'error', config.logLevel, 'xray: setActor failed', {
@@ -246,7 +267,11 @@ function endRequest(
     requestBody: capture.requestBody === 'none' ? undefined : request.body,
     responseBody: capture.responseBody === 'none' ? undefined : res.body,
     tenantId: state.tenantId ?? undefined,
+    tenantSlug: state.tenantSlug ?? undefined,
+    userEmail: state.userEmail ?? undefined,
+    userFullName: state.userFullName ?? undefined,
     userId: state.userId ?? undefined,
+    userName: state.userName ?? undefined,
     sessionId: state.sessionId ?? undefined,
     error: buildError(err ?? state.error),
     attributes: Object.keys(state.attributes).length > 0 ? { ...state.attributes } : undefined,
@@ -301,8 +326,20 @@ function endRequest(
       if (state.tenantId != null) {
         setTenantIdAttribute(span, state.tenantId);
       }
+      if (state.tenantSlug) {
+        setTenantSlugAttribute(span, state.tenantSlug);
+      }
+      if (state.userEmail) {
+        setUserEmailAttribute(span, state.userEmail);
+      }
+      if (state.userFullName) {
+        setUserFullNameAttribute(span, state.userFullName);
+      }
       if (state.userId) {
         setUserIdAttribute(span, state.userId);
+      }
+      if (state.userName) {
+        setUserNameAttribute(span, state.userName);
       }
       if (err ?? state.error) {
         spanStatusFromError(span, err ?? state.error);

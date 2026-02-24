@@ -19,7 +19,7 @@ const xray = createEmitter(
 
 app.use('*', xray);
 app.use('*', async (c, next) => {
-  c.get('xray')?.setActor('tenant-123', 'user-123');
+  c.get('xray')?.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
   await next();
 });
 

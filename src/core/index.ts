@@ -6,6 +6,7 @@ export type {
   NormalizedRequest,
   NormalizedResponse,
   RequestLog,
+  SetActorParams,
   XrayContext,
   XrayEmitter,
 } from './types';

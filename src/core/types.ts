@@ -104,9 +104,25 @@ export interface RequestLog {
    */
   tenantId?: string;
   /**
+   * Tenant slug recorded via `setActor`.
+   */
+  tenantSlug?: string;
+  /**
+   * User email recorded via `setActor`.
+   */
+  userEmail?: string;
+  /**
+   * User full name recorded via `setActor`.
+   */
+  userFullName?: string;
+  /**
    * User identifier recorded via `setActor` or legacy `setUserId`.
    */
   userId?: string;
+  /**
+   * Username recorded via `setActor`.
+   */
+  userName?: string;
   /**
    * Session identifier recorded via `setSessionId`.
    */
@@ -123,6 +139,37 @@ export interface RequestLog {
    * ISO timestamp for when request processing completed.
    */
   timestamp: string;
+}
+
+/**
+ * Parameters for `setActor`.
+ */
+export interface SetActorParams {
+  /**
+   * Tenant identifier (required).
+   */
+  tenantId: string;
+  /**
+   * Slug for the tenant. A slug is an arbitrary human-friendly string
+   * identifier for a tenant (e.g. `acme-inc`).
+   */
+  tenantSlug?: string;
+  /**
+   * Email address of the user, if known.
+   */
+  userEmail?: string;
+  /**
+   * Full name of the user, if known (e.g. `John Doe`).
+   */
+  userFullName?: string;
+  /**
+   * User identifier (required).
+   */
+  userId: string;
+  /**
+   * Username of the user, if known (e.g. `jdoe`).
+   */
+  userName?: string;
 }
 
 /**
@@ -144,10 +191,11 @@ export interface XrayContext {
   /**
    * Set actor identity for the request.
    *
-   * `tenantId` is always recorded.
-   * `userId` is recorded only when non-empty.
+   * `tenantId` and `userId` are required. Additional fields like
+   * `tenantSlug`, `userEmail`, `userFullName`, and `userName` are optional
+   * and recorded only when provided.
    */
-  setActor(tenantId: string, userId: string): void;
+  setActor(params: SetActorParams): void;
   /**
    * @deprecated Use `setActor(tenantId, userId)` to record tenant and user IDs together.
    */
