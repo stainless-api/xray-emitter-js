@@ -179,7 +179,7 @@ test('setActor records tenant and user IDs', async () => {
     headers: {},
     startTimeMs: 0,
   });
-  ctx.setActor('tenant-123', 'user-123');
+  ctx.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
 
   const log = xray.endRequest(ctx, {
     statusCode: 200,
@@ -194,7 +194,7 @@ test('setActor records tenant and user IDs', async () => {
   assert.equal(spans[0]?.attributes['user.id'], 'user-123');
 });
 
-test('setActor can record tenant without user', async () => {
+test('setActor records all fields', async () => {
   const spans: ReadableSpan[] = [];
   const xray = createEmitter(
     {
@@ -207,11 +207,18 @@ test('setActor can record tenant without user', async () => {
 
   const ctx = xray.startRequest({
     method: 'GET',
-    url: 'https://example.test/actor-tenant-only',
+    url: 'https://example.test/actor-all',
     headers: {},
     startTimeMs: 0,
   });
-  ctx.setActor('tenant-123', '');
+  ctx.setActor({
+    tenantId: 'tenant-123',
+    tenantSlug: 'acme-corp',
+    userEmail: 'jane@example.com',
+    userFullName: 'Jane Doe',
+    userId: 'user-456',
+    userName: 'jdoe',
+  });
 
   const log = xray.endRequest(ctx, {
     statusCode: 200,
@@ -221,9 +228,57 @@ test('setActor can record tenant without user', async () => {
 
   await xray.flush();
   assert.equal(log.tenantId, 'tenant-123');
-  assert.equal(log.userId, undefined);
+  assert.equal(log.tenantSlug, 'acme-corp');
+  assert.equal(log.userEmail, 'jane@example.com');
+  assert.equal(log.userFullName, 'Jane Doe');
+  assert.equal(log.userId, 'user-456');
+  assert.equal(log.userName, 'jdoe');
   assert.equal(spans[0]?.attributes['stainlessxray.tenant.id'], 'tenant-123');
-  assert.equal('user.id' in (spans[0]?.attributes ?? {}), false);
+  assert.equal(spans[0]?.attributes['stainlessxray.tenant.slug'], 'acme-corp');
+  assert.equal(spans[0]?.attributes['user.email'], 'jane@example.com');
+  assert.equal(spans[0]?.attributes['user.full_name'], 'Jane Doe');
+  assert.equal(spans[0]?.attributes['user.id'], 'user-456');
+  assert.equal(spans[0]?.attributes['user.name'], 'jdoe');
+});
+
+test('setActor records only required fields when optional fields omitted', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/actor-required-only',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setActor({ tenantId: 'tenant-123', userId: 'user-456' });
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.equal(log.tenantId, 'tenant-123');
+  assert.equal(log.userId, 'user-456');
+  assert.equal(log.tenantSlug, undefined);
+  assert.equal(log.userEmail, undefined);
+  assert.equal(log.userFullName, undefined);
+  assert.equal(log.userName, undefined);
+  assert.equal(spans[0]?.attributes['stainlessxray.tenant.id'], 'tenant-123');
+  assert.equal(spans[0]?.attributes['user.id'], 'user-456');
+  assert.equal('stainlessxray.tenant.slug' in (spans[0]?.attributes ?? {}), false);
+  assert.equal('user.email' in (spans[0]?.attributes ?? {}), false);
+  assert.equal('user.full_name' in (spans[0]?.attributes ?? {}), false);
+  assert.equal('user.name' in (spans[0]?.attributes ?? {}), false);
 });
 
 test('setActor logs when span attributes fail', () => {
@@ -259,7 +314,7 @@ test('setActor logs when span attributes fail', () => {
     }) as typeof state.span.setAttribute;
   }
 
-  ctx.setActor('tenant-123', 'user-123');
+  ctx.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
 
   assert.equal(errors.length, 1);
   assert.equal(errors[0]?.msg, 'xray: setActor failed');

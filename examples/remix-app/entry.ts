@@ -9,7 +9,7 @@ export function createRemixHandler(
 ) {
   const handler = async (request: Request) => {
     const xrayCtx = getXrayContext(request);
-    xrayCtx?.setActor('tenant-123', 'user-123');
+    xrayCtx?.setActor({ tenantId: 'tenant-123', userId: 'user-123' });
     const body = await request.text();
     return new Response(`remix:${body}`, { status: 200 });
   };

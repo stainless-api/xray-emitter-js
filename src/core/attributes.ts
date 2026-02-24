@@ -8,7 +8,10 @@ import {
   ATTR_HTTP_ROUTE,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
+  ATTR_USER_EMAIL,
+  ATTR_USER_FULL_NAME,
   ATTR_USER_ID,
+  ATTR_USER_NAME,
 } from '@opentelemetry/semantic-conventions/incubating';
 import type { CapturedBody } from './types';
 import {
@@ -20,6 +23,7 @@ import {
   AttributeKeyResponseBodyEncoding,
   AttributeKeyResponseBodyTruncated,
   AttributeKeyTenantID,
+  AttributeKeyTenantSlug,
 } from './attrkey';
 
 export function setHeaderAttributes(
@@ -284,8 +288,24 @@ export function setUserIdAttribute(span: Span, userId: string): void {
   span.setAttribute(ATTR_USER_ID, userId);
 }
 
+export function setUserEmailAttribute(span: Span, userEmail: string): void {
+  span.setAttribute(ATTR_USER_EMAIL, userEmail);
+}
+
+export function setUserFullNameAttribute(span: Span, userFullName: string): void {
+  span.setAttribute(ATTR_USER_FULL_NAME, userFullName);
+}
+
+export function setUserNameAttribute(span: Span, userName: string): void {
+  span.setAttribute(ATTR_USER_NAME, userName);
+}
+
 export function setTenantIdAttribute(span: Span, tenantId: string): void {
   span.setAttribute(AttributeKeyTenantID, tenantId);
+}
+
+export function setTenantSlugAttribute(span: Span, tenantSlug: string): void {
+  span.setAttribute(AttributeKeyTenantSlug, tenantSlug);
 }
 
 export function setRequestIdAttribute(span: Span, requestId: string): void {
