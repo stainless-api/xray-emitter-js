@@ -31,7 +31,7 @@ test('setHeaderAttributes coerces header values to arrays', () => {
   assert.deepEqual(span.attributes['http.request.header.set-cookie'], ['a=1', 'b=2']);
 });
 
-test('setRequestAttributes uses otel http keys and captures url.path', () => {
+test('setRequestAttributes uses otel http keys and captures url parts', () => {
   const span = makeSpan();
   attributes.setRequestAttributes(
     span as unknown as Span,
@@ -41,7 +41,9 @@ test('setRequestAttributes uses otel http keys and captures url.path', () => {
 
   assert.equal(span.attributes['http.request.method'], 'POST');
   assert.equal(span.attributes['url.full'], 'https://example.test/api/v1/items?x=1#frag');
+  assert.equal(span.attributes['url.domain'], 'example.test');
   assert.equal(span.attributes['url.path'], '/api/v1/items');
+  assert.equal(span.attributes['url.query'], 'x=1');
   assert.equal('http.method' in span.attributes, false);
 });
 
@@ -49,7 +51,22 @@ test('setRequestAttributes extracts path from a relative URL', () => {
   const span = makeSpan();
   attributes.setRequestAttributes(span as unknown as Span, { method: 'GET' }, '/items/42?x=1#frag');
 
+  assert.equal('url.domain' in span.attributes, false);
   assert.equal(span.attributes['url.path'], '/items/42');
+  assert.equal(span.attributes['url.query'], 'x=1');
+});
+
+test('setRequestAttributes does not set url.query when query is absent', () => {
+  const span = makeSpan();
+  attributes.setRequestAttributes(
+    span as unknown as Span,
+    { method: 'GET' },
+    'https://example.test/items',
+  );
+
+  assert.equal(span.attributes['url.domain'], 'example.test');
+  assert.equal(span.attributes['url.path'], '/items');
+  assert.equal('url.query' in span.attributes, false);
 });
 
 test('setRequestAttributes derives client.address from Forwarded headers', () => {

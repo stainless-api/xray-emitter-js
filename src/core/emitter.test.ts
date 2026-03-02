@@ -59,6 +59,37 @@ test('client.address respects redacted forwarding headers', async () => {
   assert.equal(spans[0]?.attributes['client.address'], '192.0.2.10');
 });
 
+test('endRequest captures redacted url.query span attribute', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+      redaction: { queryParams: ['token'], replacement: 'REDACTED' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/info?token=secret&view=full',
+    headers: {},
+    startTimeMs: 1000,
+  });
+
+  xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 1005,
+  });
+
+  await xray.flush();
+  assert.equal(spans.length, 1);
+  assert.equal(spans[0]?.attributes['url.domain'], 'example.test');
+  assert.equal(spans[0]?.attributes['url.query'], 'token=REDACTED&view=full');
+});
+
 test('endRequest computes duration from start/end times', () => {
   const xray = createEmitter(
     { serviceName: 'test', endpointUrl: 'https://collector' },

@@ -6,8 +6,10 @@ import {
   ATTR_HTTP_RESPONSE_BODY_SIZE,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_HTTP_ROUTE,
+  ATTR_URL_DOMAIN,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
+  ATTR_URL_QUERY,
   ATTR_USER_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
 import type { CapturedBody } from './types';
@@ -55,9 +57,15 @@ export function setRequestAttributes(
   const effectiveUrl = urlFull ?? request.url;
   if (effectiveUrl) {
     span.setAttribute(ATTR_URL_FULL, effectiveUrl);
-    const path = extractPath(effectiveUrl);
+    const { domain, path, query } = extractUrlParts(effectiveUrl);
+    if (domain) {
+      span.setAttribute(ATTR_URL_DOMAIN, domain);
+    }
     if (path) {
       span.setAttribute(ATTR_URL_PATH, path);
+    }
+    if (query) {
+      span.setAttribute(ATTR_URL_QUERY, query);
     }
   }
   const clientAddress = clientAddressForRequest(
@@ -70,13 +78,22 @@ export function setRequestAttributes(
   }
 }
 
-function extractPath(url: string): string | undefined {
+function extractUrlParts(url: string): { domain?: string; path?: string; query?: string } {
   try {
-    return new URL(url).pathname;
+    const parsed = new URL(url);
+    return {
+      domain: parsed.hostname || undefined,
+      path: parsed.pathname || undefined,
+      query: parsed.search ? parsed.search.slice(1) || undefined : undefined,
+    };
   } catch {
-    // If not a full URL, try to extract path directly
-    const match = url.match(/^[^?#]*/);
-    return match?.[0] || undefined;
+    // If not a full URL, extract path and query directly.
+    const pathMatch = url.match(/^[^?#]*/);
+    const queryMatch = url.match(/\?([^#]*)/);
+    return {
+      path: pathMatch?.[0] || undefined,
+      query: queryMatch?.[1] || undefined,
+    };
   }
 }
 
