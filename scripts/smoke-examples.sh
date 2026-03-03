@@ -81,13 +81,11 @@ run_server_example() {
   pnpm --filter "./examples/${example}" start >"$log_file" 2>&1 &
   local pid="$!"
 
+  local response=""
   local ready=0
   local attempt
   for attempt in $(seq 1 80); do
-    if curl --silent --show-error --fail --max-time 1 "$url" >/dev/null 2>&1; then
-      ready=1
-      break
-    fi
+    response=$(curl --silent --max-time 1 -X POST "${url}hello/test" 2>/dev/null) && ready=1 && break
 
     if ! kill -0 "$pid" 2>/dev/null; then
       echo "example ${example} exited before becoming ready"
@@ -100,6 +98,13 @@ run_server_example() {
 
   if [[ "$ready" -ne 1 ]]; then
     echo "timed out waiting for ${example} at ${url}"
+    cat "$log_file"
+    stop_process_tree "$pid"
+    return 1
+  fi
+
+  if ! echo "$response" | grep -q '"Hello test"'; then
+    echo "unexpected response from ${example}: ${response}"
     cat "$log_file"
     stop_process_tree "$pid"
     return 1
