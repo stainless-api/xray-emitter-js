@@ -1,4 +1,4 @@
-import { createEmitter, wrapFetch } from '@stainlessdev/xray-emitter/fetch';
+import { createEmitter, wrapFetch, getXrayContext } from '@stainlessdev/xray-emitter/fetch';
 import { isMain } from '../_fetch_server';
 
 export function createEdgeHandler(
@@ -7,7 +7,22 @@ export function createEdgeHandler(
     endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
   }),
 ): (req: Request) => Promise<Response> {
-  return wrapFetch(async (_req) => new Response('ok', { status: 200 }), xray);
+  return wrapFetch(
+    async (req) => {
+      const ctx = getXrayContext(req);
+      ctx?.setActor('tenant-123', 'user-123');
+
+      const subject = new URL(req.url).pathname.split('/')[2] ?? 'world';
+      ctx?.setAttribute('subject', subject);
+
+      return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+    xray,
+    { route: '/hello/:subject' },
+  );
 }
 
 if (isMain(import.meta.url)) {
@@ -16,7 +31,7 @@ if (isMain(import.meta.url)) {
     endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
   });
   const handler = createEdgeHandler(xray);
-  const request = new Request('https://example.com/hello', { method: 'GET' });
+  const request = new Request('https://example.com/hello/test', { method: 'POST' });
   void handler(request)
     .then(async (res) => {
       const text = await res.text();

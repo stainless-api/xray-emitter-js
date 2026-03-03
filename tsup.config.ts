@@ -12,6 +12,7 @@ export default defineConfig({
     next: 'src/next/next.ts',
     remix: 'src/remix/remix.ts',
     effect: 'src/effect/effect.ts',
+    stub: 'src/stub/stub.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

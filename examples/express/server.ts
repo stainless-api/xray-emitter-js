@@ -18,12 +18,11 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.get('/', (_req, res) => {
-  res.send('Hello World!');
-});
-
-app.post('/widgets/:id', express.text({ type: '*/*' }), (req, res) => {
-  res.type('text/plain').send(`widget:${req.params.id}:${req.body ?? ''}`);
+app.post('/hello/:subject', (req, res) => {
+  const subject = req.params.subject;
+  const ctx = getXrayContext(req);
+  ctx?.setAttribute('subject', subject);
+  res.json({ message: `Hello ${subject}` });
 });
 
 const port = 3000;

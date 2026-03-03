@@ -23,8 +23,10 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-app.get('/', (c) => {
-  return c.text('Hello Node.js!');
+app.post('/hello/:subject', (c) => {
+  const subject = c.req.param('subject');
+  c.get('xray')?.setAttribute('subject', subject);
+  return c.json({ message: `Hello ${subject}` });
 });
 
 const port = 3000;

@@ -9,24 +9,24 @@ export const xray = createEmitter({
   requestId: { header: 'request-id' },
 });
 
-const router = HttpRouter.empty.pipe(
-  HttpRouter.get(
-    '/',
-    Effect.gen(function* () {
-      const ctx = yield* currentXrayContext;
-      ctx?.setActor('tenant-123', 'user-123');
-      return HttpServerResponse.text('Hello Effect!');
-    }),
-  ),
-  HttpRouter.post(
-    '/widgets/:id',
-    Effect.gen(function* () {
-      const ctx = yield* currentXrayContext;
-      ctx?.setAttribute('widget', true);
-      return HttpServerResponse.text('created');
-    }),
-  ),
-);
+const setActor = Effect.gen(function* () {
+  const ctx = yield* currentXrayContext;
+  ctx?.setActor('tenant-123', 'user-123');
+});
 
-// Apply xray middleware
-export const app = xray(router);
+export const app = HttpRouter.empty.pipe(
+  HttpRouter.post(
+    '/hello/:subject',
+    Effect.gen(function* () {
+      yield* setActor;
+      const ctx = yield* currentXrayContext;
+      const params = yield* HttpRouter.params;
+      const subject = params.subject ?? 'world';
+      ctx?.setAttribute('subject', subject);
+      return HttpServerResponse.text(JSON.stringify({ message: `Hello ${subject}` }), {
+        contentType: 'application/json',
+      });
+    }),
+  ),
+  HttpRouter.use(xray),
+);
