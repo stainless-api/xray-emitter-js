@@ -1,10 +1,11 @@
 import http from 'node:http';
-import { createRequire } from 'node:module';
 import type { RequestLog, CapturedBody } from '../core/types';
 
-const require = createRequire(import.meta.url);
-const root: any = require('@opentelemetry/otlp-transformer/build/src/generated/root.js');
+import _root from '@opentelemetry/otlp-transformer/build/src/generated/root.js';
 
+// The generated protobuf root has deeply nested namespaces that aren't
+// reflected in its type declarations.
+const root = _root as any;
 const ExportTraceServiceRequest =
   root.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 
