@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { createEmitter } from '@stainlessdev/xray-emitter/fastify';
+import { createEmitter, type XrayContext } from '@stainlessdev/xray-emitter/fastify';
 
 const fastify = Fastify({ logger: true });
 
@@ -12,20 +12,22 @@ const xray = createEmitter({
 
 xray(fastify);
 
+function getXray(request: unknown): XrayContext | undefined {
+  return (request as { xray?: XrayContext }).xray;
+}
+
 fastify.addHook('onRequest', async (request) => {
-  const anyRequest = request as typeof request & {
-    xray?: { setActor: (tenantId: string, userId: string) => void };
-  };
-  anyRequest.xray?.setActor('tenant-123', 'user-123');
+  getXray(request)?.setActor('tenant-123', 'user-123');
 });
 
-fastify.get('/', async () => {
-  return { hello: 'world' };
+fastify.post('/hello/:subject', async (request) => {
+  const subject = (request.params as { subject: string }).subject;
+  return { message: `Hello ${subject}` };
 });
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 });
+    await fastify.listen({ port: Number(process.env.PORT) || 3000 });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

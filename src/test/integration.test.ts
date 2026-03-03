@@ -4,58 +4,13 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { describe, test, beforeEach, afterEach } from 'node:test';
+import { createStub, type XrayStub } from '../stub/stub';
 
 let hasBun = false;
 try {
   execFileSync('bun', ['--version'], { stdio: 'ignore' });
   hasBun = true;
 } catch {}
-
-// ---------------------------------------------------------------------------
-// Stub OTLP receiver — accepts POST /v1/traces, returns 200, counts requests
-// ---------------------------------------------------------------------------
-
-interface StubReceiver {
-  server: http.Server;
-  url: string;
-  requestCount: number;
-  close(): Promise<void>;
-}
-
-function createStubReceiver(): Promise<StubReceiver> {
-  return new Promise((resolve) => {
-    let requestCount = 0;
-    const server = http.createServer((req, res) => {
-      if (req.method === 'POST' && req.url === '/v1/traces') {
-        requestCount++;
-        // Drain body
-        req.resume();
-        req.on('end', () => {
-          res.writeHead(200);
-          res.end();
-        });
-      } else {
-        res.writeHead(404);
-        res.end();
-      }
-    });
-
-    server.listen(0, '127.0.0.1', () => {
-      const addr = server.address() as import('node:net').AddressInfo;
-      const receiver: StubReceiver = {
-        server,
-        url: `http://127.0.0.1:${addr.port}`,
-        get requestCount() {
-          return requestCount;
-        },
-        close() {
-          return new Promise((resolve) => server.close(() => resolve()));
-        },
-      };
-      resolve(receiver);
-    });
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,15 +43,15 @@ function waitForPort(port: number, timeoutMs = 10_000): Promise<void> {
   });
 }
 
-/** Make a simple HTTP GET request. */
-function httpGet(url: string): Promise<number> {
+/** Make an HTTP POST request with an empty body. */
+function httpPost(url: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    http
-      .get(url, (res) => {
-        res.resume();
-        res.on('end', () => resolve(res.statusCode ?? 0));
-      })
-      .on('error', reject);
+    const req = http.request(url, { method: 'POST' }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode ?? 0));
+    });
+    req.on('error', reject);
+    req.end();
   });
 }
 
@@ -105,13 +60,14 @@ function httpGet(url: string): Promise<number> {
 // ---------------------------------------------------------------------------
 
 describe('integration: examples emit OTLP traces', { concurrency: false }, () => {
-  let receiver: StubReceiver;
+  let stub: XrayStub;
 
-  function childEnv(): Record<string, string> {
+  function childEnv(port?: number): Record<string, string> {
     return {
       ...process.env,
-      STAINLESS_XRAY_ENDPOINT_URL: receiver.url,
+      STAINLESS_XRAY_ENDPOINT_URL: stub.url,
       STAINLESS_XRAY_SPAN_PROCESSOR: 'simple',
+      ...(port != null ? { PORT: String(port) } : {}),
     } as Record<string, string>;
   }
 
@@ -141,19 +97,21 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
     });
   }
 
-  /** Spawn a server, wait for readiness, make a request, then SIGTERM. */
+  /** Spawn a server, wait for readiness, POST /hello/test, then SIGTERM. */
   function spawnServer(
     file: string,
-    { cmd, port = 3000, timeoutMs = 15_000 } = {} as {
+    { cmd, args, cwd, port = 3000, timeoutMs = 15_000 } = {} as {
       cmd?: string;
+      args?: string[];
+      cwd?: string;
       port?: number;
       timeoutMs?: number;
     },
   ): Promise<{ stderr: string }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(cmd ?? TSX, [file], {
-        cwd: path.dirname(file),
-        env: childEnv(),
+      const child = spawn(cmd ?? TSX, args ?? [file], {
+        cwd: cwd ?? path.dirname(file),
+        env: childEnv(port),
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 
@@ -180,9 +138,10 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
         resolve({ stderr });
       });
 
-      // Wait for port -> make a request -> SIGTERM.
+      // Wait for port -> POST /hello/test -> allow time for OTLP export -> SIGTERM.
       waitForPort(port)
-        .then(() => httpGet(`http://127.0.0.1:${port}/`))
+        .then(() => httpPost(`http://127.0.0.1:${port}/hello/test`))
+        .then(() => new Promise((r) => setTimeout(r, 200)))
         .then(() => {
           child.kill('SIGTERM');
         })
@@ -194,62 +153,90 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
     });
   }
 
+  function assertRequestLog({ expectRoute = true } = {}) {
+    assert.ok(
+      stub.requestLogs.length >= 1,
+      `expected request logs, got ${stub.requestLogs.length}`,
+    );
+    const log = stub.requestLogs[0]!;
+    assert.equal(log.method, 'POST');
+    assert.ok(
+      log.url.includes('/hello/test'),
+      `expected url to contain /hello/test, got ${log.url}`,
+    );
+    if (expectRoute) {
+      assert.equal(log.route, '/hello/{subject}');
+    }
+    assert.ok(log.requestId, 'expected non-empty requestId');
+    assert.equal(log.serviceName, 'xray-example');
+    assert.ok(log.responseBody?.value, 'expected responseBody to be captured');
+    assert.deepEqual(JSON.parse(log.responseBody!.value), {
+      message: 'Hello test',
+    });
+  }
+
   beforeEach(async () => {
-    receiver = await createStubReceiver();
+    stub = await createStub();
   });
 
   afterEach(async () => {
-    await receiver.close();
+    await stub.close();
   });
 
   // -- Server examples ------------------------------------------------------
 
   test('effect', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'effect', 'server.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog();
   });
 
   test('effect (bun)', { skip: !hasBun }, async () => {
     await spawnServer(path.join(ROOT, 'examples', 'effect', 'server-bun.ts'), {
       cmd: 'bun',
     });
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog();
   });
 
   test('express', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'express', 'server.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog();
   });
 
   test('fastify', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'fastify', 'server.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog();
   });
 
   test('hono', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'hono', 'server.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog();
   });
 
   test('node-http', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'node-http', 'server.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog({ expectRoute: false });
   });
 
   // -- Script examples ------------------------------------------------------
 
   test('edge', async () => {
     await spawnAndWait(path.join(ROOT, 'examples', 'edge', 'worker.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog({ expectRoute: false });
   });
 
   test('next-app', async () => {
-    await spawnAndWait(path.join(ROOT, 'examples', 'next-app', 'route.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    const nextAppDir = path.join(ROOT, 'examples', 'next-app');
+    await spawnServer(nextAppDir, {
+      cmd: path.join(ROOT, 'examples', 'next-app', 'node_modules', '.bin', 'next'),
+      args: ['dev'],
+      cwd: nextAppDir,
+      timeoutMs: 30_000,
+    });
+    assertRequestLog();
   });
 
   test('remix-app', async () => {
     await spawnAndWait(path.join(ROOT, 'examples', 'remix-app', 'entry.ts'));
-    assert.ok(receiver.requestCount >= 1, `expected traces, got ${receiver.requestCount}`);
+    assertRequestLog({ expectRoute: false });
   });
 });

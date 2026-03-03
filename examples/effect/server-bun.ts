@@ -3,7 +3,7 @@ import { HttpServer } from '@effect/platform';
 import { BunHttpServer, BunRuntime } from '@effect/platform-bun';
 import { app, xray } from './app';
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const ServerLive = BunHttpServer.layer({ port });
 const AppLive = app.pipe(HttpServer.serve(), Layer.provide(ServerLive));
 

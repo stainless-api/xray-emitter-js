@@ -23,11 +23,12 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-app.get('/', (c) => {
-  return c.text('Hello Node.js!');
+app.post('/hello/:subject', (c) => {
+  const subject = c.req.param('subject');
+  return c.json({ message: `Hello ${subject}` });
 });
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const server = serve({ fetch: app.fetch, port });
 
 const shutdown = async () => {

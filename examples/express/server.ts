@@ -18,15 +18,12 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.get('/', (_req, res) => {
-  res.send('Hello World!');
+app.post('/hello/:subject', (req, res) => {
+  const subject = req.params.subject;
+  res.json({ message: `Hello ${subject}` });
 });
 
-app.post('/widgets/:id', express.text({ type: '*/*' }), (req, res) => {
-  res.type('text/plain').send(`widget:${req.params.id}:${req.body ?? ''}`);
-});
-
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const server = app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

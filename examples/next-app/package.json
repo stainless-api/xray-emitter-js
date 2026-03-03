@@ -3,13 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tsx route.ts"
+    "start": "next dev"
   },
   "dependencies": {
-    "@stainlessdev/xray-emitter": "workspace:*"
+    "@stainlessdev/xray-emitter": "workspace:*",
+    "next": "^15"
   },
   "devDependencies": {
-    "tsx": "^4.19.0",
+    "@types/react": "19.2.14",
     "typescript": "^5.4.0"
   }
 }

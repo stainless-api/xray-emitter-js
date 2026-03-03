@@ -4,7 +4,7 @@ import { HttpServer } from '@effect/platform';
 import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
 import { app, xray } from './app';
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const ServerLive = NodeHttpServer.layer(createServer, { port });
 const AppLive = app.pipe(HttpServer.serve(), Layer.provide(ServerLive));
 

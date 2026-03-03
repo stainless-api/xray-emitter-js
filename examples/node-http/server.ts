@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
-import { createEmitter, wrapHttpHandler } from '@stainlessdev/xray-emitter/node';
+import { createEmitter, wrapHttpHandler, getXrayContext } from '@stainlessdev/xray-emitter/node';
 
 const hostname = '127.0.0.1';
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 
 const xray = createEmitter({
   serviceName: 'xray-example',
@@ -12,10 +12,15 @@ const xray = createEmitter({
 });
 
 const server = createServer(
-  wrapHttpHandler((_req, res) => {
+  wrapHttpHandler((req, res) => {
+    const ctx = getXrayContext(req);
+    ctx?.setActor('tenant-123', 'user-123');
+
+    const subject = (req.url ?? '').split('/')[2] ?? 'world';
+
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('Hello World!');
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ message: `Hello ${subject}` }));
   }, xray),
 );
 

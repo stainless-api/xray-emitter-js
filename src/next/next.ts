@@ -55,7 +55,53 @@ export function wrapNextRoute(
   options?: WrapOptions,
 ): (request: Request, context: NextRouteContext) => Promise<Response> {
   return async (request, context) => {
-    const wrapped = wrapFetchPreserve((req: Request) => handler(req, context), xray, options);
+    // When no explicit route option was provided, infer the route pattern
+    // from the URL pathname and the resolved params (e.g. { subject: "test" }
+    // turns /hello/test into /hello/[subject]).
+    let effectiveOptions = options;
+    if (!options?.route) {
+      const params = await context.params;
+      const route = inferRoute(new URL(request.url).pathname, params);
+      if (route) {
+        effectiveOptions = { ...options, route };
+      }
+    }
+
+    const wrapped = wrapFetchPreserve(
+      (req: Request) => handler(req, context),
+      xray,
+      effectiveOptions,
+    );
     return wrapped(request);
   };
+}
+
+function inferRoute(
+  pathname: string,
+  params: Record<string, string | string[]>,
+): string | undefined {
+  // Build a map from param value → placeholder for single-segment params.
+  const replacements = new Map<string, string>();
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') {
+      replacements.set(value, `[${key}]`);
+    }
+  }
+  if (replacements.size === 0) return undefined;
+
+  const segments = pathname.split('/');
+  let replaced = false;
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i]!;
+    const placeholder = replacements.get(seg);
+    if (placeholder) {
+      // If this param value appears in more than one segment we cannot
+      // tell which is the dynamic one — bail out entirely.
+      if (segments.indexOf(seg, i + 1) !== -1) return undefined;
+      segments[i] = placeholder;
+      replacements.delete(seg);
+      replaced = true;
+    }
+  }
+  return replaced ? segments.join('/') : undefined;
 }
