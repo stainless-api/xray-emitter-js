@@ -80,11 +80,27 @@ function inferRoute(
   pathname: string,
   params: Record<string, string | string[]>,
 ): string | undefined {
-  let route = pathname;
+  // Build a map from param value → placeholder for single-segment params.
+  const replacements = new Map<string, string>();
   for (const [key, value] of Object.entries(params)) {
     if (typeof value === 'string') {
-      route = route.replace(value, `[${key}]`);
+      replacements.set(value, `[${key}]`);
     }
   }
-  return route !== pathname ? route : undefined;
+  if (replacements.size === 0) return undefined;
+
+  // Replace per-segment so that a param value matching a static segment
+  // only replaces the rightmost (deepest) occurrence.
+  const segments = pathname.split('/');
+  let replaced = false;
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const seg = segments[i]!;
+    const placeholder = replacements.get(seg);
+    if (placeholder) {
+      segments[i] = placeholder;
+      replacements.delete(seg);
+      replaced = true;
+    }
+  }
+  return replaced ? segments.join('/') : undefined;
 }

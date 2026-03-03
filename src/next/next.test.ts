@@ -67,3 +67,62 @@ test('next integration captures body and route', async () => {
   assert.equal(captured.requestBody?.value, 'hello');
   assert.equal(captured.responseBody?.value, 'next:123:hello');
 });
+
+test('next integration infers route from params', async () => {
+  let captured: any = null;
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { instance: createNoopExporter() },
+    },
+    {
+      onResponse: (_ctx, log) => {
+        captured = log;
+      },
+    },
+  );
+
+  const handler = xray(async (_req, ctx) => {
+    const params = await ctx.params;
+    return new Response(`ok:${params.id}`);
+  });
+
+  const req = new Request('https://example.test/api/test/42', { method: 'GET' });
+  const ctx = { params: Promise.resolve({ id: '42' }) };
+  await handler(req, ctx);
+
+  await delay(0);
+  assert.ok(captured);
+  assert.equal(captured.route, '/api/test/{id}');
+});
+
+test('next integration infers route when param value matches static segment', async () => {
+  let captured: any = null;
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { instance: createNoopExporter() },
+    },
+    {
+      onResponse: (_ctx, log) => {
+        captured = log;
+      },
+    },
+  );
+
+  const handler = xray(async (_req, ctx) => {
+    const params = await ctx.params;
+    return new Response(`ok:${params.id}`);
+  });
+
+  // param value "test" also appears as a static segment
+  const req = new Request('https://example.test/api/test/test', { method: 'GET' });
+  const ctx = { params: Promise.resolve({ id: 'test' }) };
+  await handler(req, ctx);
+
+  await delay(0);
+  assert.ok(captured);
+  assert.equal(captured.route, '/api/test/{id}');
+});
