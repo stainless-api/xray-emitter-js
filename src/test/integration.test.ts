@@ -228,8 +228,8 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
   test('next-app', async () => {
     const nextAppDir = path.join(ROOT, 'examples', 'next-app');
     await spawnServer(nextAppDir, {
-      cmd: 'pnpm',
-      args: ['start'],
+      cmd: path.join(ROOT, 'examples', 'next-app', 'node_modules', '.bin', 'next'),
+      args: ['dev'],
       cwd: nextAppDir,
       timeoutMs: 30_000,
     });
