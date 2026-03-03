@@ -29,7 +29,7 @@ app.post('/hello/:subject', (c) => {
   return c.json({ message: `Hello ${subject}` });
 });
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const server = serve({ fetch: app.fetch, port });
 
 const shutdown = async () => {

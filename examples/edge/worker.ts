@@ -7,22 +7,18 @@ export function createEdgeHandler(
     endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
   }),
 ): (req: Request) => Promise<Response> {
-  return wrapFetch(
-    async (req) => {
-      const ctx = getXrayContext(req);
-      ctx?.setActor('tenant-123', 'user-123');
+  return wrapFetch(async (req) => {
+    const ctx = getXrayContext(req);
+    ctx?.setActor('tenant-123', 'user-123');
 
-      const subject = new URL(req.url).pathname.split('/')[2] ?? 'world';
-      ctx?.setAttribute('subject', subject);
+    const subject = new URL(req.url).pathname.split('/')[2] ?? 'world';
+    ctx?.setAttribute('subject', subject);
 
-      return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
-    },
-    xray,
-    { route: '/hello/:subject' },
-  );
+    return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }, xray);
 }
 
 if (isMain(import.meta.url)) {

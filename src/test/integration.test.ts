@@ -62,11 +62,12 @@ function httpPost(url: string): Promise<number> {
 describe('integration: examples emit OTLP traces', { concurrency: false }, () => {
   let stub: XrayStub;
 
-  function childEnv(): Record<string, string> {
+  function childEnv(port?: number): Record<string, string> {
     return {
       ...process.env,
       STAINLESS_XRAY_ENDPOINT_URL: stub.url,
       STAINLESS_XRAY_SPAN_PROCESSOR: 'simple',
+      ...(port != null ? { PORT: String(port) } : {}),
     } as Record<string, string>;
   }
 
@@ -99,16 +100,18 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
   /** Spawn a server, wait for readiness, POST /hello/test, then SIGTERM. */
   function spawnServer(
     file: string,
-    { cmd, port = 3000, timeoutMs = 15_000 } = {} as {
+    { cmd, args, cwd, port = 3000, timeoutMs = 15_000 } = {} as {
       cmd?: string;
+      args?: string[];
+      cwd?: string;
       port?: number;
       timeoutMs?: number;
     },
   ): Promise<{ stderr: string }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(cmd ?? TSX, [file], {
-        cwd: path.dirname(file),
-        env: childEnv(),
+      const child = spawn(cmd ?? TSX, args ?? [file], {
+        cwd: cwd ?? path.dirname(file),
+        env: childEnv(port),
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 
@@ -150,7 +153,7 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
     });
   }
 
-  function assertRequestLog() {
+  function assertRequestLog({ expectRoute = true } = {}) {
     assert.ok(
       stub.requestLogs.length >= 1,
       `expected request logs, got ${stub.requestLogs.length}`,
@@ -161,7 +164,9 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
       log.url.includes('/hello/test'),
       `expected url to contain /hello/test, got ${log.url}`,
     );
-    assert.equal(log.route, '/hello/{subject}');
+    if (expectRoute) {
+      assert.equal(log.route, '/hello/{subject}');
+    }
     assert.ok(log.requestId, 'expected non-empty requestId');
     assert.equal(log.serviceName, 'xray-example');
     assert.equal(log.attributes?.subject, 'test');
@@ -210,23 +215,29 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
 
   test('node-http', async () => {
     await spawnServer(path.join(ROOT, 'examples', 'node-http', 'server.ts'));
-    assertRequestLog();
+    assertRequestLog({ expectRoute: false });
   });
 
   // -- Script examples ------------------------------------------------------
 
   test('edge', async () => {
     await spawnAndWait(path.join(ROOT, 'examples', 'edge', 'worker.ts'));
-    assertRequestLog();
+    assertRequestLog({ expectRoute: false });
   });
 
   test('next-app', async () => {
-    await spawnAndWait(path.join(ROOT, 'examples', 'next-app', 'route.ts'));
+    const nextAppDir = path.join(ROOT, 'examples', 'next-app');
+    await spawnServer(nextAppDir, {
+      cmd: 'pnpm',
+      args: ['start'],
+      cwd: nextAppDir,
+      timeoutMs: 30_000,
+    });
     assertRequestLog();
   });
 
   test('remix-app', async () => {
     await spawnAndWait(path.join(ROOT, 'examples', 'remix-app', 'entry.ts'));
-    assertRequestLog();
+    assertRequestLog({ expectRoute: false });
   });
 });

@@ -55,7 +55,36 @@ export function wrapNextRoute(
   options?: WrapOptions,
 ): (request: Request, context: NextRouteContext) => Promise<Response> {
   return async (request, context) => {
-    const wrapped = wrapFetchPreserve((req: Request) => handler(req, context), xray, options);
+    // When no explicit route option was provided, infer the route pattern
+    // from the URL pathname and the resolved params (e.g. { subject: "test" }
+    // turns /hello/test into /hello/[subject]).
+    let effectiveOptions = options;
+    if (!options?.route) {
+      const params = await context.params;
+      const route = inferRoute(new URL(request.url).pathname, params);
+      if (route) {
+        effectiveOptions = { ...options, route };
+      }
+    }
+
+    const wrapped = wrapFetchPreserve(
+      (req: Request) => handler(req, context),
+      xray,
+      effectiveOptions,
+    );
     return wrapped(request);
   };
+}
+
+function inferRoute(
+  pathname: string,
+  params: Record<string, string | string[]>,
+): string | undefined {
+  let route = pathname;
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') {
+      route = route.replace(value, `[${key}]`);
+    }
+  }
+  return route !== pathname ? route : undefined;
 }

@@ -25,7 +25,7 @@ app.post('/hello/:subject', (req, res) => {
   res.json({ message: `Hello ${subject}` });
 });
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 const server = app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

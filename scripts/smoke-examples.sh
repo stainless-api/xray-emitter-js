@@ -127,8 +127,9 @@ run_server_example "hono" "http://127.0.0.1:3000/"
 run_server_example "node-http" "http://127.0.0.1:3000/"
 run_server_example "effect" "http://127.0.0.1:3000/"
 
+run_server_example "next-app" "http://127.0.0.1:3000/"
+
 run_script_example "edge"
-run_script_example "next-app"
 run_script_example "remix-app"
 
 echo "example smoke tests passed"

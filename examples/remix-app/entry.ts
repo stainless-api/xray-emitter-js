@@ -2,13 +2,10 @@ import { createEmitter, getXrayContext } from '@stainlessdev/xray-emitter/remix'
 import { isMain } from '../_fetch_server';
 
 export function createRemixHandler(
-  xray = createEmitter(
-    {
-      serviceName: 'xray-example',
-      endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
-    },
-    { route: '/hello/:subject' },
-  ),
+  xray = createEmitter({
+    serviceName: 'xray-example',
+    endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
+  }),
 ) {
   const handler = async (request: Request) => {
     const xrayCtx = getXrayContext(request);
@@ -27,13 +24,10 @@ export function createRemixHandler(
 }
 
 if (isMain(import.meta.url)) {
-  const xray = createEmitter(
-    {
-      serviceName: 'xray-example',
-      endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
-    },
-    { route: '/hello/:subject' },
-  );
+  const xray = createEmitter({
+    serviceName: 'xray-example',
+    endpointUrl: process.env.STAINLESS_XRAY_ENDPOINT_URL,
+  });
   const handler = createRemixHandler(xray);
   const req = new Request('https://example.com/hello/test', {
     method: 'POST',
