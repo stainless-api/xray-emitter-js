@@ -12,7 +12,6 @@ export function createRemixHandler(
     xrayCtx?.setActor('tenant-123', 'user-123');
 
     const subject = new URL(request.url).pathname.split('/')[2] ?? 'world';
-    xrayCtx?.setAttribute('subject', subject);
 
     return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
       status: 200,

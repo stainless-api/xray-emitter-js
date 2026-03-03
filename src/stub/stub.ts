@@ -69,32 +69,6 @@ function collectHeaders(
   return found ? headers : undefined;
 }
 
-const knownAttrPrefixes = [
-  'http.',
-  'url.',
-  'client.',
-  'server.',
-  'network.',
-  'service.',
-  'enduser.',
-  'stainlessxray.',
-  'xray.',
-  'otel.',
-];
-
-function collectCustomAttributes(
-  attrs: SpanAttributes,
-): Record<string, string | number | boolean | string[]> | undefined {
-  const custom: Record<string, string | number | boolean | string[]> = {};
-  let found = false;
-  for (const [key, value] of Object.entries(attrs)) {
-    if (knownAttrPrefixes.some((p) => key.startsWith(p))) continue;
-    found = true;
-    custom[key] = value;
-  }
-  return found ? custom : undefined;
-}
-
 function spanToRequestLog(attrs: SpanAttributes): RequestLog | undefined {
   const method = attrs['http.request.method'] as string | undefined;
   if (method == null) return undefined;
@@ -123,7 +97,6 @@ function spanToRequestLog(attrs: SpanAttributes): RequestLog | undefined {
     ),
     tenantId: attrs['stainlessxray.tenant.id'] as string | undefined,
     userId: attrs['enduser.id'] as string | undefined,
-    attributes: collectCustomAttributes(attrs),
     timestamp: '',
   };
 }

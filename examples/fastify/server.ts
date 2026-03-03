@@ -22,7 +22,6 @@ fastify.addHook('onRequest', async (request) => {
 
 fastify.post('/hello/:subject', async (request) => {
   const subject = (request.params as { subject: string }).subject;
-  getXray(request)?.setAttribute('subject', subject);
   return { message: `Hello ${subject}` };
 });
 

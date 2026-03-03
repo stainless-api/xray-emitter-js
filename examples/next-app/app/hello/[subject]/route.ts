@@ -11,7 +11,6 @@ export const POST = xray(async (req, ctx) => {
   const subject = params.subject ?? 'world';
   const xrayCtx = getXrayContext(req);
   xrayCtx?.setActor('tenant-123', 'user-123');
-  xrayCtx?.setAttribute('subject', subject);
 
   return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
     status: 200,

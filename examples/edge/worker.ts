@@ -12,7 +12,6 @@ export function createEdgeHandler(
     ctx?.setActor('tenant-123', 'user-123');
 
     const subject = new URL(req.url).pathname.split('/')[2] ?? 'world';
-    ctx?.setAttribute('subject', subject);
 
     return new Response(JSON.stringify({ message: `Hello ${subject}` }), {
       status: 200,

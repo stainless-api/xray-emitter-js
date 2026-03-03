@@ -25,7 +25,6 @@ app.use('*', async (c, next) => {
 
 app.post('/hello/:subject', (c) => {
   const subject = c.req.param('subject');
-  c.get('xray')?.setAttribute('subject', subject);
   return c.json({ message: `Hello ${subject}` });
 });
 

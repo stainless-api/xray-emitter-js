@@ -20,8 +20,6 @@ app.use((req, _res, next) => {
 
 app.post('/hello/:subject', (req, res) => {
   const subject = req.params.subject;
-  const ctx = getXrayContext(req);
-  ctx?.setAttribute('subject', subject);
   res.json({ message: `Hello ${subject}` });
 });
 

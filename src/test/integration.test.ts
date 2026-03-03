@@ -169,7 +169,6 @@ describe('integration: examples emit OTLP traces', { concurrency: false }, () =>
     }
     assert.ok(log.requestId, 'expected non-empty requestId');
     assert.equal(log.serviceName, 'xray-example');
-    assert.equal(log.attributes?.subject, 'test');
     assert.ok(log.responseBody?.value, 'expected responseBody to be captured');
     assert.deepEqual(JSON.parse(log.responseBody!.value), {
       message: 'Hello test',

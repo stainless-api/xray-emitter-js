@@ -17,7 +17,6 @@ const server = createServer(
     ctx?.setActor('tenant-123', 'user-123');
 
     const subject = (req.url ?? '').split('/')[2] ?? 'world';
-    ctx?.setAttribute('subject', subject);
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');

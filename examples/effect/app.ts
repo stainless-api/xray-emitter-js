@@ -19,10 +19,8 @@ export const app = HttpRouter.empty.pipe(
     '/hello/:subject',
     Effect.gen(function* () {
       yield* setActor;
-      const ctx = yield* currentXrayContext;
       const params = yield* HttpRouter.params;
       const subject = params.subject ?? 'world';
-      ctx?.setAttribute('subject', subject);
       return HttpServerResponse.text(JSON.stringify({ message: `Hello ${subject}` }), {
         contentType: 'application/json',
       });
