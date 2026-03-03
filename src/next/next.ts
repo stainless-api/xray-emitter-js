@@ -89,14 +89,15 @@ function inferRoute(
   }
   if (replacements.size === 0) return undefined;
 
-  // Replace per-segment so that a param value matching a static segment
-  // only replaces the rightmost (deepest) occurrence.
   const segments = pathname.split('/');
   let replaced = false;
-  for (let i = segments.length - 1; i >= 0; i--) {
+  for (let i = 0; i < segments.length; i++) {
     const seg = segments[i]!;
     const placeholder = replacements.get(seg);
     if (placeholder) {
+      // If this param value appears in more than one segment we cannot
+      // tell which is the dynamic one — bail out entirely.
+      if (segments.indexOf(seg, i + 1) !== -1) return undefined;
       segments[i] = placeholder;
       replacements.delete(seg);
       replaced = true;
