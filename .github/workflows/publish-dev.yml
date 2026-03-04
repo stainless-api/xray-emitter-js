@@ -14,10 +14,13 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
-    concurrency: publish-dev
+    concurrency:
+      group: publish-dev-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - uses: actions/checkout@v6
