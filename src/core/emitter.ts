@@ -14,6 +14,7 @@ import {
   setResponseBodySizeAttribute,
   setResponseStatusAttribute,
   setRouteAttribute,
+  setTagsAttribute,
   setTenantIdAttribute,
   setUserIdAttribute,
 } from './attributes';
@@ -136,19 +137,12 @@ function startRequest(
       }
       state.sessionId = id;
     },
-    setAttribute: (key, value) => {
+    setTag: (key, value) => {
       const state = getContextState(context);
       if (!state) {
         return;
       }
-      state.attributes[key] = value;
-      if (span) {
-        try {
-          span.setAttribute(key, value as AttributeValue);
-        } catch {
-          // Ignore span attribute errors.
-        }
-      }
+      state.tags[key] = value;
     },
     addEvent: (name, attributes) => {
       const state = getContextState(context);
@@ -187,6 +181,7 @@ function startRequest(
     context,
     attributes: {},
     events: [],
+    tags: Object.create(null) as Record<string, AttributeValue>,
   };
 
   bindContext(context, state);
@@ -250,6 +245,7 @@ function endRequest(
     sessionId: state.sessionId ?? undefined,
     error: buildError(err ?? state.error),
     attributes: Object.keys(state.attributes).length > 0 ? { ...state.attributes } : undefined,
+    tags: Object.keys(state.tags).length > 0 ? { ...state.tags } : undefined,
     timestamp: new Date(endTimeMs).toISOString(),
   };
 
@@ -303,6 +299,9 @@ function endRequest(
       }
       if (state.userId) {
         setUserIdAttribute(span, state.userId);
+      }
+      if (Object.keys(state.tags).length > 0) {
+        setTagsAttribute(span, state.tags);
       }
       if (err ?? state.error) {
         spanStatusFromError(span, err ?? state.error);

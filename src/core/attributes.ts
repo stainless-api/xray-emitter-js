@@ -10,7 +10,7 @@ import {
   ATTR_URL_PATH,
   ATTR_USER_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
-import type { CapturedBody } from './types';
+import type { AttributeValue, CapturedBody } from './types';
 import {
   AttributeKeyRequestBody,
   AttributeKeyRequestBodyEncoding,
@@ -19,6 +19,7 @@ import {
   AttributeKeyResponseBody,
   AttributeKeyResponseBodyEncoding,
   AttributeKeyResponseBodyTruncated,
+  AttributeKeyTags,
   AttributeKeyTenantID,
 } from './attrkey';
 
@@ -290,4 +291,46 @@ export function setTenantIdAttribute(span: Span, tenantId: string): void {
 
 export function setRequestIdAttribute(span: Span, requestId: string): void {
   span.setAttribute(AttributeKeyRequestID, requestId);
+}
+
+/**
+ * JSON encode user-defined custom tags and add them as a span attribute.
+ * Values that cannot be represented in JSON (e.g. BigInt) are silently dropped.
+ */
+export function setTagsAttribute(span: Span, tags: Record<string, AttributeValue>): void {
+  const safe: Record<string, AttributeValue> = Object.create(null);
+  for (const key of Object.keys(tags)) {
+    const v = tags[key];
+    if (isJSONSafe(v)) {
+      safe[key] = v!;
+    }
+  }
+  span.setAttribute(AttributeKeyTags, JSON.stringify(safe));
+}
+
+// JSON-safe values should only be settable via the type system, but in case raw
+// JS is in use, do a runtime check for safe JSON values to avoid an exception
+// and all tags being lost.
+//
+// The `seen` argument is used to avoid infinite recursion when checking for
+// circular references in arrays. No need to pass it for most invocations.
+function isJSONSafe(value: unknown, seen?: Set<unknown>): boolean {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  const t = typeof value;
+  if (t === 'string' || t === 'number' || t === 'boolean') {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    if (!seen) {
+      seen = new Set();
+    }
+    if (seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    return value.every((el) => isJSONSafe(el, seen));
+  }
+  return false;
 }

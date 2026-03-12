@@ -179,3 +179,76 @@ test('setTenantIdAttribute sets stainlessxray.tenant.id', () => {
   setTenantIdAttribute?.(span as unknown as Span, 'tenant-123');
   assert.equal(span.attributes['stainlessxray.tenant.id'], 'tenant-123');
 });
+
+test('setTagsAttribute serializes safe values', () => {
+  const span = makeSpan();
+  attributes.setTagsAttribute(span as unknown as Span, {
+    str: 'hello',
+    num: 42,
+    bool: true,
+    strArr: ['a', 'b'],
+    numArr: [1, 2],
+    boolArr: [true, false],
+  });
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, {
+    str: 'hello',
+    num: 42,
+    bool: true,
+    strArr: ['a', 'b'],
+    numArr: [1, 2],
+    boolArr: [true, false],
+  });
+});
+
+test('setTagsAttribute drops BigInt values', () => {
+  const span = makeSpan();
+  const tags = { safe: 'ok', unsafe: BigInt(9007199254740991) } as Record<string, unknown>;
+  attributes.setTagsAttribute(span as unknown as Span, tags as Record<string, never>);
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { safe: 'ok' });
+});
+
+test('setTagsAttribute drops undefined and null values', () => {
+  const span = makeSpan();
+  const tags = { kept: 'yes', undef: undefined, nil: null } as Record<string, unknown>;
+  attributes.setTagsAttribute(span as unknown as Span, tags as Record<string, never>);
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { kept: 'yes' });
+});
+
+test('setTagsAttribute drops functions and symbols', () => {
+  const span = makeSpan();
+  const tags = { kept: 100, fn: () => {}, sym: Symbol('x') } as Record<string, unknown>;
+  attributes.setTagsAttribute(span as unknown as Span, tags as Record<string, never>);
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { kept: 100 });
+});
+
+test('setTagsAttribute drops arrays containing unsafe elements', () => {
+  const span = makeSpan();
+  const tags = {
+    good: [1, 2, 3],
+    bad: [1, BigInt(2), 3],
+    mixed: ['a', undefined, 'b'],
+  } as Record<string, unknown>;
+  attributes.setTagsAttribute(span as unknown as Span, tags as Record<string, never>);
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { good: [1, 2, 3] });
+});
+
+test('setTagsAttribute drops self-referential arrays', () => {
+  const span = makeSpan();
+  const cycle: unknown[] = [1, 2];
+  cycle.push(cycle);
+  const tags = { safe: 'ok', cycle } as Record<string, unknown>;
+  attributes.setTagsAttribute(span as unknown as Span, tags as Record<string, never>);
+
+  const parsed = JSON.parse(span.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { safe: 'ok' });
+});
