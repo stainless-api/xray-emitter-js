@@ -120,6 +120,10 @@ export interface RequestLog {
    */
   attributes?: Record<string, AttributeValue>;
   /**
+   * Custom tags added via `setTag`.
+   */
+  tags?: Record<string, AttributeValue>;
+  /**
    * ISO timestamp for when request processing completed.
    */
   timestamp: string;
@@ -157,9 +161,9 @@ export interface XrayContext {
    */
   setSessionId(id: string): void;
   /**
-   * Add or overwrite a custom attribute on the request span/log.
+   * Set an arbitrary user-defined key/value tag on the request.
    */
-  setAttribute(key: string, value: AttributeValue): void;
+  setTag(key: string, value: AttributeValue): void;
   /**
    * Add a span event for the current request.
    */

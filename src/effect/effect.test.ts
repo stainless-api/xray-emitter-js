@@ -116,7 +116,7 @@ test('effect integration provides xray context', async () => {
   const app = Effect.gen(function* () {
     const ctx = yield* currentXrayContext;
     ctx?.setActor('tenant-42', 'user-42');
-    ctx?.setAttribute('plan', 'pro');
+    ctx?.setTag('plan', 'pro');
     return HttpServerResponse.text('ok');
   });
 

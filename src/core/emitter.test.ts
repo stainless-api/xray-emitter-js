@@ -331,3 +331,177 @@ test('setUserId logs when span attributes fail', () => {
   assert.equal(errors[0]?.msg, 'xray: setUserId failed');
   assert.equal(errors[0]?.fields?.['error'], 'setAttribute failed');
 });
+
+test('setTag records tags in log and span', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/tags',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setTag('environment', 'staging');
+  ctx.setTag('region', 'us-east-1');
+  ctx.setTag('retries', 3);
+  ctx.setTag('verbose', true);
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.deepEqual(log.tags, {
+    environment: 'staging',
+    region: 'us-east-1',
+    retries: 3,
+    verbose: true,
+  });
+  const tagsAttr = spans[0]?.attributes['stainlessxray.internal.tags'];
+  assert.equal(typeof tagsAttr, 'string');
+  assert.deepEqual(JSON.parse(tagsAttr as string), {
+    environment: 'staging',
+    region: 'us-east-1',
+    retries: 3,
+    verbose: true,
+  });
+});
+
+test('setTag overwrites previous value for same key', () => {
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+    },
+    createNoopExporter(),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/tags-overwrite',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setTag('env', 'dev');
+  ctx.setTag('env', 'prod');
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  assert.deepEqual(log.tags, { env: 'prod' });
+});
+
+test('tags omitted from log and span when empty', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/no-tags',
+    headers: {},
+    startTimeMs: 0,
+  });
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.equal(log.tags, undefined);
+  assert.equal('stainlessxray.internal.tags' in (spans[0]?.attributes ?? {}), false);
+});
+
+test('setTag treats __proto__ and constructor as plain keys', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/proto-tags',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setTag('__proto__', 'poisoned');
+  ctx.setTag('constructor', 'overwritten');
+  ctx.setTag('toString', 42);
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  assert.equal(log.tags?.['__proto__'], 'poisoned');
+  assert.equal(log.tags?.['constructor'], 'overwritten');
+  assert.equal(log.tags?.['toString'], 42);
+  assert.equal(Object.keys(log.tags!).length, 3);
+  const parsed = JSON.parse(spans[0]?.attributes['stainlessxray.internal.tags'] as string);
+  assert.equal(parsed['__proto__'], 'poisoned');
+  assert.equal(parsed['constructor'], 'overwritten');
+  assert.equal(parsed['toString'], 42);
+});
+
+test('setTag filters non-JSON-safe values from span attribute', async () => {
+  const spans: ReadableSpan[] = [];
+  const xray = createEmitter(
+    {
+      serviceName: 'test',
+      endpointUrl: 'https://collector',
+      exporter: { spanProcessor: 'simple' },
+    },
+    createRecordingExporter(spans),
+  );
+
+  const ctx = xray.startRequest({
+    method: 'GET',
+    url: 'https://example.test/unsafe-tags',
+    headers: {},
+    startTimeMs: 0,
+  });
+  ctx.setTag('safe', 'kept');
+  ctx.setTag('bigint' as string, BigInt(42) as never);
+
+  const log = xray.endRequest(ctx, {
+    statusCode: 200,
+    headers: {},
+    endTimeMs: 5,
+  });
+
+  await xray.flush();
+  // The log retains the raw tags as-is
+  assert.equal(log.tags?.['safe'], 'kept');
+  assert.equal(log.tags?.['bigint'], BigInt(42));
+  // The span attribute only contains the JSON-safe subset
+  const parsed = JSON.parse(spans[0]?.attributes['stainlessxray.internal.tags'] as string);
+  assert.deepEqual(parsed, { safe: 'kept' });
+});
